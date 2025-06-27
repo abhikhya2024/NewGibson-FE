@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Button,
   Card,
@@ -21,19 +22,39 @@ import {
 import * as XLSX from "xlsx";
 import pluralize from "pluralize";
 import Header from "components/Headers/Header.js";
+import Help from "components/Help/Help";
+import {
+  WitnessFilter,
+  WitnessTypeFilter,
+  WitnessAlignmentFilter,
+  TranscriptFilter,
+} from "components/Filters/Filters";
 
 const Index = () => {
   const [qaPairs, setQaPairs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selected, setSelected] = useState("fuzzy");
   const [highlightResults, setHighlightResults] = useState({});
-  const [numRecords, setNumRecords] = useState(0)
-  
+  const [numRecords, setNumRecords] = useState(0);
+
+  // Pagination
+  const [page, setPage] = useState(1); // starts from page 1
+  const [pageSize, setPageSize] = useState(100);
+
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [loading, setLoading] = useState(false);
+  const [nextPage, setNextPage] = useState(
+    "http://localhost:8000/api/testimony/"
+  );
+  const [data, setData] = useState([]);
+
   const [modal, setModal] = useState(false);
   const toggle = () => setModal(!modal);
 
   const handleChange = (e) => {
     setSelected(e.target.value);
+    console.log("Hiii");
     fetchSearchResults(searchTerm); // ✅ pass value directly
   };
 
@@ -45,36 +66,78 @@ const Index = () => {
   };
 
   // API call to fetch all data
-  const fetchTranscriptFromDjango = async () => {
+  // useEffect(() => {
+  //   const fetchAllData = async () => {
+  //     let currentPage = nextPage;
+
+  //     while (currentPage) {
+  //       setLoading(true);
+  //       try {
+  //         const res = await axios.get(currentPage);
+  //         setQaPairs((prev) => [...prev, ...res.data.testimonies]);
+  //         currentPage = res.data.next; // Next page URL from backend
+  //       } catch (err) {
+  //         console.error("Failed to fetch:", err);
+  //         break; // Stop on error
+  //       }
+  //     }
+  //     setLoading(false);
+  //   };
+
+  //   fetchAllData();
+  // }, []); // 👈 Only runs once
+
+  useEffect(() => {
+    fetchPaginatedData(1); // Load first page
+  }, []);
+
+  const fetchPaginatedData = async (newPage, overridePageSize = pageSize) => {
+    if (newPage < 1) return;
+
+    setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/fetch-transcripts/");
-      if (!res.ok) throw new Error(`Error: ${res.status}`);
-      const data = await res.json();
-      setQaPairs(data);
+      const res = await axios.get(
+        `http://localhost:8000/api/testimony/?page=${newPage}&page_size=${overridePageSize}`
+      );
+      setQaPairs(res.data.results);
+      setTotalCount(res.data.count);
+      setPage(newPage);
     } catch (err) {
-      console.log(err.message);
+      console.error("Failed to fetch paginated data:", err);
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Call once to populate qaPairs
-  useEffect(() => {
-    fetchTranscriptFromDjango();
-  }, []);
 
   // Search logic
   // useEffect(() => {
 
   //   fetchSearchResults();
   // }, [searchTerm, selected]);
-
   const getHighlights = (text, query) => {
     if (!query.trim()) return [];
 
+    const booleanOperators = new Set(["and", "or", "not"]);
     const highlights = [];
     const textLower = text.toLowerCase();
-    const queryWords = query.trim().toLowerCase().split(/\s+/);
 
-    for (const word of queryWords) {
+    // Matches:
+    // - quoted phrases ("contract breach")
+    // - single words (excluding slop/proximity patterns like /s, /p, /5)
+    const matches =
+      query.toLowerCase().match(/"[^"]+"|\b(?!\/(s|p|\d+)\b)\w+\b/g) || [];
+
+    const keywords = matches
+      .map((word) => word.replace(/^"|"$/g, "")) // Remove surrounding quotes
+      .filter(
+        (word) =>
+          word &&
+          !booleanOperators.has(word) &&
+          !["(", ")"].includes(word) &&
+          !/^\/(s|p|\d+)$/.test(word)
+      );
+
+    for (const word of keywords) {
       if (textLower.includes(word)) {
         highlights.push(word);
       }
@@ -82,6 +145,7 @@ const Index = () => {
 
     return highlights;
   };
+
   const fetchSearchResults = async (searchText) => {
     if (!searchText.trim()) {
       setHighlightResults({});
@@ -95,15 +159,17 @@ const Index = () => {
         )}&q=${encodeURIComponent(searchText)}`
       );
       const data = await res.json();
-      console.log("data", data.count)
-      setNumRecords(data.count)
+      console.log("data", data.count);
+      setNumRecords(data.count);
       const results = {};
       data.results.forEach((item) => {
         const key = item.question + item.answer + item.cite;
+        // + item.filename;
         results[key] = {
           question: item.question,
           answer: item.answer,
           cite: item.cite,
+          // filename: item.filename,
           highlights: item.highlights || {},
         };
       });
@@ -138,27 +204,30 @@ const Index = () => {
       Question: qa.question,
       Answer: qa.answer,
       Citation: qa.cite,
+      // Filename: qa.filename,
     }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "QA Pairs");
     XLSX.writeFile(workbook, "QA_Pairs.xlsx");
-    toggle()
+    toggle();
   };
 
   const filteredQaPairs = searchTerm.trim()
     ? qaPairs.filter((qa) => {
         const key = qa.question + qa.answer + qa.cite;
+        // + qa.filename;
         return highlightResults[key];
       })
     : qaPairs;
 
   return (
     <>
-      <Header />
-       <Modal isOpen={modal} toggle={toggle}>
+      <Header numRecords={numRecords} />
+      <Modal isOpen={modal} toggle={toggle}>
         <ModalBody>
-          You are about to download {numRecords} QA Pairs. Are you sure you want to proceed?
+          You are about to download {numRecords} QA Pairs. Are you sure you want
+          to proceed?
         </ModalBody>
         <ModalFooter>
           <Button color="primary" onClick={downloadExcel}>
@@ -185,38 +254,47 @@ const Index = () => {
             </InputGroup>
           </Col>
           <Col sm="6">
-            <Form>
-              <FormGroup tag="fieldset">
-                <div className="d-flex gap-4">
-                  {["fuzzy", "boolean", "exact"].map((option) => (
-                    <FormGroup check key={option}>
-                      <Label
-                        check
-                        className="d-flex align-items-center mr-4 mt-1 text-white"
-                      >
-                        <Input
-                          type="radio"
-                          name="search-mode"
-                          value={option}
-                          checked={selected === option}
-                          onChange={handleChange}
-                          style={{
-                            width: "15px",
-                            height: "15px",
-                            accentColor: "#fb6340",
-                          }}
-                        />
-                        <span
-                          style={{ marginLeft: "10px", fontSize: "1.1rem" }}
-                        >
-                          {option}
-                        </span>
-                      </Label>
-                    </FormGroup>
-                  ))}
-                </div>
-              </FormGroup>
-            </Form>
+            <Row>
+              <Col>
+                <Form>
+                  <FormGroup tag="fieldset">
+                    <div className="d-flex gap-4">
+                      {["fuzzy", "boolean", "exact"].map((option) => (
+                        <FormGroup check key={option}>
+                          <Label
+                            check
+                            className="d-flex align-items-center mr-3 mt-1 text-white"
+                          >
+                            <Input
+                              type="radio"
+                              name="search-mode"
+                              value={option}
+                              checked={selected === option}
+                              onChange={(e) => handleChange(e)}
+                              style={{
+                                width: "15px",
+                                height: "15px",
+                                accentColor: "#fb6340",
+                              }}
+                            />
+                            <span
+                              style={{ marginLeft: "10px", fontSize: "1.1rem" }}
+                            >
+                              {option}
+                            </span>
+                          </Label>
+                        </FormGroup>
+                      ))}
+                    </div>
+                  </FormGroup>
+                </Form>
+              </Col>
+              <Col>
+                <Help />
+
+                {/* <img src={help} height={30}/> */}
+              </Col>
+            </Row>
           </Col>
           <Col sm="2">
             <Button color="success" className="mb-3" onClick={toggle}>
@@ -224,22 +302,25 @@ const Index = () => {
             </Button>
           </Col>
         </Row>
-
+        <br />
+        <br />
+        <br />
         <Row>
-          <Card className="shadow">
-            <CardHeader className="border-0">
-              <h3 className="mb-0">Transcript QA Table</h3>
-            </CardHeader>
-            <Table  className="align-items-center table-flush" responsive>
-              <thead className="thead-light">
-                <tr>
-                  <th scope="col">Question</th>
-                  <th scope="col">Answer</th>
-                  <th scope="col">Citation</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* {filteredQaPairs.map((qa, index) => {
+          <Col sm="9">
+            <Card className="shadow" style={{ height: "700px" }}>
+              <CardHeader className="border-0">
+                <h3 className="mb-0">Transcript QA Table</h3>
+              </CardHeader>
+              <Table className="align-items-center table-flush" responsive>
+                <thead className="thead-light">
+                  <tr>
+                    <th scope="col">Question</th>
+                    <th scope="col">Answer</th>
+                    <th scope="col">Citation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* {filteredQaPairs.map((qa, index) => {
                   const key = qa.question + qa.answer + qa.cite;
                   const highlight = highlightResults[key]?.highlights || {};
                   return (
@@ -250,25 +331,123 @@ const Index = () => {
                     </tr>
                   );
                 })} */}
-                {filteredQaPairs.map((qa, index) => {
-                  const questionHighlights = getHighlights(
-                    qa.question,
-                    searchTerm
-                  );
-                  const answerHighlights = getHighlights(qa.answer, searchTerm);
-                  const citeHighlights = getHighlights(qa.cite, searchTerm);
+                  {filteredQaPairs.map((qa, index) => {
+                    const questionHighlights = getHighlights(
+                      qa.question,
+                      searchTerm
+                    );
+                    const answerHighlights = getHighlights(
+                      qa.answer,
+                      searchTerm
+                    );
+                    const citeHighlights = getHighlights(qa.cite, searchTerm);
 
-                  return (
-                    <tr key={index}>
-                      <td>{renderCell(qa.question, questionHighlights)}</td>
-                      <td>{renderCell(qa.answer, answerHighlights)}</td>
-                      <td>{renderCell(qa.cite, citeHighlights)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-          </Card>
+                    return (
+                      <tr key={index}>
+                        <td>{renderCell(qa.question, questionHighlights)}</td>
+                        <td>{renderCell(qa.answer, answerHighlights)}</td>
+                        <td>{renderCell(qa.cite, citeHighlights)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+              {/* <div className="d-flex justify-content-between align-items-center p-3">
+                <Button
+                  color="primary"
+                  disabled={offset === 0 || loading}
+                  onClick={() => fetchPaginatedData(offset - limit)}
+                >
+                  Previous
+                </Button>
+                <span>
+                  Page {Math.floor(offset / limit) + 1} of{" "}
+                  {Math.ceil(totalCount / limit)}
+                </span>
+                <Button
+                  color="primary"
+                  disabled={offset + limit >= totalCount || loading}
+                  onClick={() => fetchPaginatedData(offset + limit)}
+                >
+                  Next
+                </Button>
+              </div> */}
+              <div className="d-flex justify-content-between align-items-center p-3">
+                <div className="d-flex align-items-center">
+                  <Button
+                    color="primary"
+                    disabled={page === 1 || loading}
+                    onClick={() => fetchPaginatedData(page - 1)}
+                    className="me-3"
+                  >
+                    Previous
+                  </Button>
+                  
+                </div>
+                <span>
+                  Page {page} of {Math.ceil(totalCount / pageSize)}
+                </span>
+
+                <Button
+                  color="primary"
+                  disabled={page * pageSize >= totalCount || loading}
+                  onClick={() => fetchPaginatedData(page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+              <div>
+                  {/* ✅ Rows Per Page Selector */}
+                  <FormGroup className="mb-0 px-3 py-2">
+                    <Label
+                      for="pageSizeSelect"
+                      className="mb-0 px-2"
+                    >
+                      Rows per page:
+                    </Label>
+                    <Input
+                      type="select"
+                      id="pageSizeSelect"
+                      value={pageSize}
+                      onChange={(e) => {
+                        const newSize = Number(e.target.value);
+                        setPageSize(newSize);
+                        fetchPaginatedData(1, newSize); // 👈 fetch with new size from page 1
+                      }}
+                      style={{ width: "auto", display: "inline-block" }}
+                    >
+                      {[10, 25, 50, 100].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </Input>
+                  </FormGroup>
+                  </div>
+            </Card>
+          </Col>
+          <Col sm="3">
+            <Card
+              className="shadow"
+              style={{ height: "700px", overflowY: "auto" }}
+            >
+              <CardHeader className="border-0">
+                {" "}
+                {/* Reduce bottom padding */}
+                <h3>Apply Filters</h3> {/* Reduce bottom margin */}
+              </CardHeader>
+
+              <CardBody>
+                {" "}
+                {/* Use minimal padding inside body */}
+                {/* <TranscriptFilter /> */}
+                {/* <WitnessTypeFilter />
+                <WitnessAlignmentFilter />
+                <WitnessFilter /> */}
+                <br />
+              </CardBody>
+            </Card>
+          </Col>
         </Row>
       </Container>
     </>
