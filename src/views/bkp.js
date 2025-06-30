@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import {
   Button,
@@ -29,8 +29,13 @@ import {
   WitnessAlignmentFilter,
   TranscriptFilter,
 } from "components/Filters/Filters";
+import { WitnessContext, TranscriptContext } from "../providers/Context";
 
 const Index = () => {
+  // Providers
+  const { selectedWitnesses } = useContext(WitnessContext);
+  const { selectedTranscripts } = useContext(TranscriptContext);
+
   const [qaPairs, setQaPairs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selected, setSelected] = useState("fuzzy");
@@ -86,6 +91,83 @@ const Index = () => {
 
   //   fetchAllData();
   // }, []); // 👈 Only runs once
+
+  // Apply witness filter
+  const fetchQAByWitnesses = async (newPage, overridePageSize = pageSize) => {
+    setLoading(true);
+
+    try {
+      if (selectedWitnesses.length === 0) {
+        // 🔹 Fetch all testimonies (no witness filter)
+        const res = await axios.get(
+          `http://localhost:8000/api/testimony/?page=${newPage}&page_size=${overridePageSize}`
+        );
+        setQaPairs(res.data.results);
+        setTotalCount(res.data.count);
+        setPage(newPage);
+      } else {
+        // 🔹 Fetch testimonies for selected witnesses
+        const names = selectedWitnesses.map((w) =>
+          `${w.first_name} ${w.last_name}`.trim()
+        );
+
+        const res = await axios.post(
+          `http://localhost:8000/api/testimony/testimony-by-witness/?page=${newPage}&page_size=${overridePageSize}`,
+          { witness_names: names }
+        );
+        setQaPairs(res.data.results || []);
+        setTotalCount(res.data.count || 0);
+        setPage(newPage);
+      }
+    } catch (err) {
+      console.error("Failed to fetch testimonies:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // useEffect(() => {
+  //   fetchQAByWitnesses(1); // Always reset to page 1 on filter change
+  // }, [selectedWitnesses]);
+
+  // Apply transcript filter
+  const fetchSearchResults = async (newPage, overridePageSize = pageSize, searchText) => {
+    setLoading(true);
+
+    try {
+ 
+        // 🔹 Fetch testimonies for selected witnesses
+        const transcript_names = selectedTranscripts.map((t) =>
+          `${t.name}`.trim()
+        );
+
+        const names = selectedWitnesses.map((w) =>
+          `${w.first_name} ${w.last_name}`.trim()
+        );
+        const res = await axios.post(
+          `http://localhost:8000/api/testimony/combined-search/?page=${newPage}&page_size=${overridePageSize}`,
+
+          {
+            q: searchText,
+            mode: selected,
+            witness_names: names,
+            transcript_names: transcript_names,
+          }
+        );
+        setQaPairs(res.data.results || []);
+        setTotalCount(res.data.count || 0);
+        setPage(newPage);
+      
+    } catch (err) {
+      console.error("Failed to fetch testimonies:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+useEffect(() => {
+  fetchSearchResults(1, pageSize, searchTerm); // Reset to page 1 on filter change
+}, [selectedWitnesses, selectedTranscripts]);
 
   useEffect(() => {
     fetchPaginatedData(1); // Load first page
@@ -146,40 +228,40 @@ const Index = () => {
     return highlights;
   };
 
-  const fetchSearchResults = async (searchText) => {
-    if (!searchText.trim()) {
-      setHighlightResults({});
-      return;
-    }
+  // const fetchSearchResults = async (searchText) => {
+  //   if (!searchText.trim()) {
+  //     setHighlightResults({});
+  //     return;
+  //   }
 
-    try {
-      const res = await fetch(
-        `http://localhost:8000/api/search?mode=${encodeURIComponent(
-          selected
-        )}&q=${encodeURIComponent(searchText)}`
-      );
-      const data = await res.json();
-      console.log("data", data.count);
-      setNumRecords(data.count);
-      const results = {};
-      data.results.forEach((item) => {
-        const key = item.question + item.answer + item.cite;
-        // + item.filename;
-        results[key] = {
-          question: item.question,
-          answer: item.answer,
-          cite: item.cite,
-          // filename: item.filename,
-          highlights: item.highlights || {},
-        };
-      });
+  //   try {
+  //     const res = await fetch(
+  //       `http://localhost:8000/api/search?mode=${encodeURIComponent(
+  //         selected
+  //       )}&q=${encodeURIComponent(searchText)}`
+  //     );
+  //     const data = await res.json();
+  //     console.log("data", data.count);
+  //     setNumRecords(data.count);
+  //     const results = {};
+  //     data.results.forEach((item) => {
+  //       const key = item.question + item.answer + item.cite;
+  //       // + item.filename;
+  //       results[key] = {
+  //         question: item.question,
+  //         answer: item.answer,
+  //         cite: item.cite,
+  //         // filename: item.filename,
+  //         highlights: item.highlights || {},
+  //       };
+  //     });
 
-      setHighlightResults(results);
-    } catch (err) {
-      console.error("Search failed:", err.message);
-      setHighlightResults({});
-    }
-  };
+  //     setHighlightResults(results);
+  //   } catch (err) {
+  //     console.error("Search failed:", err.message);
+  //     setHighlightResults({});
+  //   }
+  // };
 
   const renderCell = (text, highlights) => {
     if (!highlights || !highlights.length) return text;
@@ -311,6 +393,21 @@ const Index = () => {
               <CardHeader className="border-0">
                 <h3 className="mb-0">Transcript QA Table</h3>
               </CardHeader>
+              <div>
+                <ul>
+                  {selectedWitnesses.map((w) => (
+                    <li key={w.id}>{`${w.first_name} ${w.last_name}`}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3>Selected Transcripts</h3>
+                <ul>
+                  {selectedTranscripts.map((t) => (
+                    <li key={t.id}>{`${t.name} ${t.name}`}</li>
+                  ))}
+                </ul>
+              </div>
               <Table className="align-items-center table-flush" responsive>
                 <thead className="thead-light">
                   <tr>
@@ -382,7 +479,6 @@ const Index = () => {
                   >
                     Previous
                   </Button>
-                  
                 </div>
                 <span>
                   Page {page} of {Math.ceil(totalCount / pageSize)}
@@ -397,33 +493,30 @@ const Index = () => {
                 </Button>
               </div>
               <div>
-                  {/* ✅ Rows Per Page Selector */}
-                  <FormGroup className="mb-0 px-3 py-2">
-                    <Label
-                      for="pageSizeSelect"
-                      className="mb-0 px-2"
-                    >
-                      Rows per page:
-                    </Label>
-                    <Input
-                      type="select"
-                      id="pageSizeSelect"
-                      value={pageSize}
-                      onChange={(e) => {
-                        const newSize = Number(e.target.value);
-                        setPageSize(newSize);
-                        fetchPaginatedData(1, newSize); // 👈 fetch with new size from page 1
-                      }}
-                      style={{ width: "auto", display: "inline-block" }}
-                    >
-                      {[10, 25, 50, 100].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </Input>
-                  </FormGroup>
-                  </div>
+                {/* ✅ Rows Per Page Selector */}
+                <FormGroup className="mb-0 px-3 py-2">
+                  <Label for="pageSizeSelect" className="mb-0 px-2">
+                    Rows per page:
+                  </Label>
+                  <Input
+                    type="select"
+                    id="pageSizeSelect"
+                    value={pageSize}
+                    onChange={(e) => {
+                      const newSize = Number(e.target.value);
+                      setPageSize(newSize);
+                      fetchPaginatedData(1, newSize); // 👈 fetch with new size from page 1
+                    }}
+                    style={{ width: "auto", display: "inline-block" }}
+                  >
+                    {[10, 25, 50, 100].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </Input>
+                </FormGroup>
+              </div>
             </Card>
           </Col>
           <Col sm="3">
@@ -440,10 +533,11 @@ const Index = () => {
               <CardBody>
                 {" "}
                 {/* Use minimal padding inside body */}
-                {/* <TranscriptFilter /> */}
-                {/* <WitnessTypeFilter />
-                <WitnessAlignmentFilter />
-                <WitnessFilter /> */}
+                <TranscriptFilter />
+                <br />
+                {/* {/* <WitnessTypeFilter /> */}
+                {/* <WitnessAlignmentFilter /> */}
+                <WitnessFilter />
                 <br />
               </CardBody>
             </Card>

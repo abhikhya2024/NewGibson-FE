@@ -1,65 +1,62 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Table, Card } from "reactstrap";
 import axios from "axios";
+import { WitnessContext, TranscriptContext } from "../../providers/Context";
+
 const WitnessFilter = () => {
-  const [witness, setWitness] = useState([]);
+  const [witnesses, setWitnesses] = useState([]);
+  const [selectedWitnessIds, setSelectedWitnessIds] = useState(new Set());
+
+  const { setSelectedWitnesses } = useContext(WitnessContext); // ✅ use setter
 
   const fetchWitness = async () => {
-    try {
-      const res = await fetch("http://localhost:8000/api/witness/");
-      if (!res.ok) throw new Error(`Error: ${res.status}`);
-      const data = await res.json();
-      console.log("response", data);
-      setWitness(data.witnesses);
-    } catch (err) {
-      console.log(err.message);
-    }
+    const res = await fetch("http://localhost:8000/api/witness/");
+    const data = await res.json();
+    setWitnesses(data.witnesses);
+  };
+
+  const handleRowClick = (witnessId) => {
+    setSelectedWitnessIds((prev) => {
+      const newSet = new Set(prev);
+      newSet.has(witnessId) ? newSet.delete(witnessId) : newSet.add(witnessId);
+      return newSet;
+    });
   };
 
   useEffect(() => {
     fetchWitness();
   }, []);
+
+  useEffect(() => {
+    const selected = witnesses.filter((w) => selectedWitnessIds.has(w.id));
+    setSelectedWitnesses(selected); // ✅ Send selected to context
+  }, [selectedWitnessIds, witnesses]);
+
   return (
-    <>
-      <Card style={{ height: "200px", width: "210px" }}>
-        <Table
-          className="align-items-center table-flush"
-          style={{ fontSize: "11px", height: "70px" }}
-          responsive
-        >
-          <thead
-            style={{
-              backgroundColor: "#11abef",
-              color: "white",
-              fontWeight: "600",
-              fontSize: "13px",
-            }}
-          >
-            <tr>
-              <th scope="col">Witness Name</th>
-            </tr>
-          </thead>
-          <tbody>
-            {witness.map((wn, index) => {
-              return (
-                <tr key={index}>
-                  <td
-                    style={{
-                      whiteSpace: "normal",
-                      wordWrap: "break-word",
-                      padding: "5px 10px", // ↓ Reduce cell padding
-                      fontSize: "11px",
-                    }}
-                  >
-                    {wn.first_name + " " + wn.last_name } 
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </Card>
-    </>
+    <Card style={{ height: "200px", width: "240px", overflowY: "auto" }}>
+      <Table responsive>
+        <thead>
+          <tr>
+            <th>Witness Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {witnesses.map((w) => {
+            const fullName = `${w.first_name || ""} ${w.last_name || ""}`.trim();
+            const isSelected = selectedWitnessIds.has(w.id);
+            return (
+              <tr
+                key={w.id}
+                onClick={() => handleRowClick(w.id)}
+                style={{ backgroundColor: isSelected ? "#dff0ff" : "white" }}
+              >
+                <td>{fullName}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
+    </Card>
   );
 };
 
@@ -127,71 +124,105 @@ const WitnessTypeFilter = () => {
 };
 
 const TranscriptFilter = () => {
-  const [transcript, setTranscript] = useState([]);
-  const fetchWitness = async () => {
+  const [transcripts, setTranscripts] = useState([]);
+  const [selectedTranscriptIds, setSelectedTranscriptIds] = useState(new Set());
+
+  const { setSelectedTranscripts } = useContext(TranscriptContext); // ✅ use setter
+
+  const fetchTranscripts = async () => {
     try {
       const res = await fetch("http://localhost:8000/api/transcript/");
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
-      console.log("response transpt", data);
-      setTranscript(data.transcripts);
+      setTranscripts(data.transcripts);
     } catch (err) {
-      console.log(err.message);
+      console.error(err.message);
     }
   };
 
   useEffect(() => {
-    fetchWitness();
+    fetchTranscripts();
   }, []);
+
+  const handleRowClick = (transcriptId) => {
+    setSelectedTranscriptIds((prev) => {
+      const newSet = new Set(prev);
+      newSet.has(transcriptId) ? newSet.delete(transcriptId) : newSet.add(transcriptId);
+      return newSet;
+    });
+  };
+
+  useEffect(() => {
+    const selected = transcripts.filter((w) => selectedTranscriptIds.has(w.id));
+    setSelectedTranscripts(selected); // ✅ Send selected to context
+  }, [selectedTranscriptIds, transcripts]);
+
   return (
-    <>
-      <Card style={{ height: "200px", width: "210px" }}>
-        <Table
-          className="align-items-center table-flush"
-          style={{ fontSize: "11px", height: "150px" }}
-          responsive
+    <Card style={{ height: "200px", width: "240px", overflowY: "auto" }}>
+      <Table
+        className="align-items-center table-flush"
+        style={{ fontSize: "11px" }}
+        responsive
+      >
+        <thead
+          style={{
+            backgroundColor: "#11abef",
+            color: "white",
+            fontWeight: "600",
+            fontSize: "13px",
+          }}
         >
-          <thead
-            style={{
-              backgroundColor: "#11abef",
-              color: "white",
-              fontWeight: "600",
-              fontSize: "13px",
-            }}
-          >
-            <tr>
-              <th scope="col">Transcript</th>
+          <tr>
+            <th scope="col">Select</th>
+            <th scope="col">Transcript</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* {transcripts.map((tn, index) => (
+            <tr key={index}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={selectedTranscripts.has(tn.name)}
+                  onChange={() => handleCheckboxChange(tn.name)}
+                />
+              </td>
+              <td
+                style={{
+                  whiteSpace: "normal",
+                  wordWrap: "break-word",
+                  padding: "5px 10px",
+                  fontSize: "11px",
+                }}
+              >
+                {tn.name}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {transcript.map((tn, index) => {
-              return (
-                <tr key={index}>
-                  <td
-                    style={{
-                      whiteSpace: "normal",
-                      wordWrap: "break-word",
-                      padding: "5px 10px", // ↓ Reduce cell padding
-                      fontSize: "11px",
-                    }}
-                  >
-                    {tn.name}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </Card>
-    </>
+          ))} */}
+          {transcripts.map((tn) => {
+            const isSelected = selectedTranscriptIds.has(tn.id);
+
+            return (
+              <tr
+                key={tn.id}
+                onClick={() => handleRowClick(tn.id)}
+                style={{ backgroundColor: isSelected ? "#dff0ff" : "white" }}
+              >
+                <td>{tn.name}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
+    </Card>
   );
 };
 
 const WitnessAlignmentFilter = () => {
   const [witnessAlignment, setWitnessAlignment] = useState([]);
   const [files, setFiles] = useState(null);
-const today = new Date();
-const formattedDate = today.toISOString().split('T')[0]; // "2025-06-21"
+  const today = new Date();
+  const formattedDate = today.toISOString().split("T")[0]; // "2025-06-21"
 
   const handleFileChange = (e) => {
     const selectedFiles = [...e.target.files];
@@ -208,7 +239,7 @@ const formattedDate = today.toISOString().split('T')[0]; // "2025-06-21"
 
     // Append each file
     files.forEach((file) => {
-        formData.append("files", file);
+      formData.append("files", file);
     });
 
     // Auto-generate file name array and send as JSON string
@@ -216,10 +247,9 @@ const formattedDate = today.toISOString().split('T')[0]; // "2025-06-21"
     try {
       const res = await axios.post(
         "http://localhost:8000/api/transcript/",
-        
-          formData,
 
-        
+        formData,
+
         {
           headers: { "Content-Type": "multipart/form-data" },
         }
@@ -292,4 +322,9 @@ const formattedDate = today.toISOString().split('T')[0]; // "2025-06-21"
     </>
   );
 };
-export { WitnessFilter, WitnessTypeFilter, WitnessAlignmentFilter, TranscriptFilter };
+export {
+  WitnessFilter,
+  WitnessTypeFilter,
+  WitnessAlignmentFilter,
+  TranscriptFilter,
+};
