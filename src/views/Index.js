@@ -30,17 +30,49 @@ import {
   TranscriptFilter,
 } from "components/Filters/Filters";
 import { WitnessContext, TranscriptContext } from "../providers/Context";
+import FilterIcon from "components/Filters/FilterIcon";
+import Comments from "components/Comments/Comments";
+import Highlighter from "react-highlight-words";
 
 const Index = () => {
+  const [highlightedWords, setHighlightedWords] = useState([]);
+  const [selection, setSelection] = useState("");
+
+  // Capture selected text from question or answer
+  const handleTextSelect = () => {
+    const selected = window.getSelection().toString().trim();
+    if (selected && !highlightedWords.includes(selected)) {
+      setSelection(selected);
+    } else {
+      setSelection("");
+    }
+  };
+
+    const handleSave = () => {
+    if (selection) {
+      setHighlightedWords([...highlightedWords, selection]);
+      setSelection("");
+      window.getSelection().removeAllRanges(); // Clear highlight
+    }
+  };
   // Providers
   const { selectedWitnesses } = useContext(WitnessContext);
   const { selectedTranscripts } = useContext(TranscriptContext);
 
+  const [checked, setChecked] = useState(false);
+
+  const showHideComments = () => {
+    setChecked((prev) => !prev);
+  };
   const [qaPairs, setQaPairs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selected, setSelected] = useState("fuzzy");
   const [highlightResults, setHighlightResults] = useState({});
   const [numRecords, setNumRecords] = useState(0);
+
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleToggle = () => setIsChecked(!isChecked);
 
   // Pagination
   const [page, setPage] = useState(1); // starts from page 1
@@ -131,33 +163,35 @@ const Index = () => {
   // }, [selectedWitnesses]);
 
   // Apply transcript filter
-  const fetchSearchResults = async (newPage, overridePageSize = pageSize, searchText) => {
+  const fetchSearchResults = async (
+    newPage,
+    overridePageSize = pageSize,
+    searchText
+  ) => {
     setLoading(true);
 
     try {
- 
-        // 🔹 Fetch testimonies for selected witnesses
-        const transcript_names = selectedTranscripts.map((t) =>
-          `${t.name}`.trim()
-        );
+      // 🔹 Fetch testimonies for selected witnesses
+      const transcript_names = selectedTranscripts.map((t) =>
+        `${t.name}`.trim()
+      );
 
-        const names = selectedWitnesses.map((w) =>
-          `${w.first_name} ${w.last_name}`.trim()
-        );
-        const res = await axios.post(
-          `http://localhost:8000/api/testimony/combined-search/?page=${newPage}&page_size=${overridePageSize}`,
+      const names = selectedWitnesses.map((w) =>
+        `${w.first_name} ${w.last_name}`.trim()
+      );
+      const res = await axios.post(
+        `http://localhost:8000/api/testimony/combined-search/?page=${newPage}&page_size=${overridePageSize}`,
 
-          {
-            q: searchText,
-            mode: selected,
-            witness_names: names,
-            transcript_names: transcript_names,
-          }
-        );
-        setQaPairs(res.data.results || []);
-        setTotalCount(res.data.count || 0);
-        setPage(newPage);
-      
+        {
+          q: searchText,
+          mode: selected,
+          witness_names: names,
+          transcript_names: transcript_names,
+        }
+      );
+      setQaPairs(res.data.results || []);
+      setTotalCount(res.data.count || 0);
+      setPage(newPage);
     } catch (err) {
       console.error("Failed to fetch testimonies:", err);
     } finally {
@@ -165,9 +199,9 @@ const Index = () => {
     }
   };
 
-useEffect(() => {
-  fetchSearchResults(1, pageSize, searchTerm); // Reset to page 1 on filter change
-}, [selectedWitnesses, selectedTranscripts]);
+  useEffect(() => {
+    fetchSearchResults(1, pageSize, searchTerm); // Reset to page 1 on filter change
+  }, [selectedWitnesses, selectedTranscripts]);
 
   useEffect(() => {
     fetchPaginatedData(1); // Load first page
@@ -295,13 +329,15 @@ useEffect(() => {
     toggle();
   };
 
-  const filteredQaPairs = searchTerm.trim()
-    ? qaPairs.filter((qa) => {
-        const key = qa.question + qa.answer + qa.cite;
-        // + qa.filename;
-        return highlightResults[key];
-      })
-    : qaPairs;
+  const filteredQaPairs = qaPairs;
+  function stringToColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = hash % 360;
+  return `hsl(${hue}, 70%, 50%)`; // vibrant color
+}
 
   return (
     <>
@@ -320,6 +356,7 @@ useEffect(() => {
           </Button>
         </ModalFooter>
       </Modal>
+
       <Container className="mt--7" fluid>
         <Row>
           <Col sm="4">
@@ -330,7 +367,7 @@ useEffect(() => {
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchTerm(value);
-                  fetchSearchResults(value); // ✅ pass value directly
+                  fetchSearchResults(1, pageSize, searchTerm);
                 }}
               />
             </InputGroup>
@@ -388,12 +425,28 @@ useEffect(() => {
         <br />
         <br />
         <Row>
-          <Col sm="9">
+          <Col sm="12">
             <Card className="shadow" style={{ height: "700px" }}>
               <CardHeader className="border-0">
                 <h3 className="mb-0">Transcript QA Table</h3>
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="flexSwitchCheckDefault"
+                    checked={isChecked}
+                    onChange={handleToggle}
+                  />
+                  <label
+                    className="form-check-label"
+                    htmlFor="flexSwitchCheckDefault"
+                  >
+                    {isChecked ? "Hide Comments" : "Show Comments"}
+                  </label>
+                </div>
               </CardHeader>
-              <div>
+              {/* <div>
                 <ul>
                   {selectedWitnesses.map((w) => (
                     <li key={w.id}>{`${w.first_name} ${w.last_name}`}</li>
@@ -407,27 +460,30 @@ useEffect(() => {
                     <li key={t.id}>{`${t.name} ${t.name}`}</li>
                   ))}
                 </ul>
-              </div>
+              </div> */}
               <Table className="align-items-center table-flush" responsive>
                 <thead className="thead-light">
                   <tr>
-                    <th scope="col">Question</th>
-                    <th scope="col">Answer</th>
-                    <th scope="col">Citation</th>
+                    <th scope="col" style={{ width: "300px" }}>
+                      File name and page numbers
+                    </th>
+                    {isChecked ? (
+                      <>
+                        <th scope="col" style={{ width: "100px" }}>
+                          Person
+                        </th>
+                        <th scope="col" style={{ width: "100px" }}>
+                          Comments
+                        </th>
+                      </>
+                    ) : null}
+
+                    <th scope="col" style={{ width: "200px" }}>
+                      QA PAirs
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {/* {filteredQaPairs.map((qa, index) => {
-                  const key = qa.question + qa.answer + qa.cite;
-                  const highlight = highlightResults[key]?.highlights || {};
-                  return (
-                    <tr key={index}>
-                      <td>{renderCell(qa.question, highlight.question || [])}</td>
-                      <td>{renderCell(qa.answer, highlight.answer || [])}</td>
-                      <td>{renderCell(qa.cite, highlight.cite || [])}</td>
-                    </tr>
-                  );
-                })} */}
                   {filteredQaPairs.map((qa, index) => {
                     const questionHighlights = getHighlights(
                       qa.question,
@@ -441,14 +497,126 @@ useEffect(() => {
 
                     return (
                       <tr key={index}>
-                        <td>{renderCell(qa.question, questionHighlights)}</td>
-                        <td>{renderCell(qa.answer, answerHighlights)}</td>
-                        <td>{renderCell(qa.cite, citeHighlights)}</td>
+                        <td
+                          style={{
+                            width: "100px",
+                            wordWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {renderCell(qa.transcript_name)}
+                          <br />
+                          {/* <br/> */}
+                          {renderCell(qa.cite, citeHighlights)}
+                        </td>
+                        {isChecked ? (
+                          <>
+                     <td>
+  {qa.commenter_emails && qa.commenter_emails.length > 0 ? (
+    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      {qa.commenter_emails.map((email, idx) => {
+        const bgColor = stringToColor(email); // Generate consistent color per email
+        return (
+          <div
+            key={idx}
+            title={email}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "50%",
+              backgroundColor: bgColor,
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              fontSize: "14px",
+              textTransform: "uppercase",
+              cursor: "default",
+            }}
+          >
+            {email.charAt(0)}
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <span style={{ color: "gray", fontStyle: "italic" }}>No comments</span>
+  )}
+</td>
+                            <td>
+                              <Comments
+                                color={
+                                  qa.commenter_emails &&
+                                  qa.commenter_emails.length > 0
+                                    ? "#11c5ef"
+                                    : "grey"
+                                }
+                              />
+                            </td>
+                          </>
+                        ) : null}
+
+                        <td
+                          style={{
+                            width: "600px",
+                            wordWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          <div
+      onMouseUp={handleTextSelect}
+      style={{
+        padding: "15px",
+        border: "1px solid #ddd",
+        borderRadius: "8px",
+        width: "600px",
+        wordWrap: "break-word",
+        whiteSpace: "normal",
+        lineHeight: "1.6",
+        fontSize: "16px",
+      }}
+    >
+      <strong>Question:</strong>
+      <Highlighter
+        highlightClassName="custom-highlight"
+        searchWords={highlightedWords}
+        autoEscape={true}
+        textToHighlight={qa.question}
+      />
+      <br />
+      <strong>Answer:</strong>
+      <Highlighter
+        highlightClassName="custom-highlight"
+        searchWords={highlightedWords}
+        autoEscape={true}
+        textToHighlight={qa.answer}
+      />
+
+      <div style={{ marginTop: "10px", color:"pink" }}>
+        {selection && (
+          <>
+            <em>Selected: "{selection}"</em>
+            <br />
+            <button onClick={handleSave}>Save Highlight</button>
+          </>
+        )}
+      </div>
+
+      <style>{`
+        .custom-highlight {
+          background-color: yellow;
+          font-weight: bold;
+        }
+      `}</style>
+    </div>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </Table>
+
               {/* <div className="d-flex justify-content-between align-items-center p-3">
                 <Button
                   color="primary"
@@ -471,7 +639,7 @@ useEffect(() => {
               </div> */}
               <div className="d-flex justify-content-between align-items-center p-3">
                 <div className="d-flex align-items-center">
-                  <Button
+                  {/* <Button
                     color="primary"
                     disabled={page === 1 || loading}
                     onClick={() => fetchPaginatedData(page - 1)}
@@ -488,6 +656,28 @@ useEffect(() => {
                   color="primary"
                   disabled={page * pageSize >= totalCount || loading}
                   onClick={() => fetchPaginatedData(page + 1)}
+                >
+                  Next
+                </Button> */}
+                  <Button
+                    color="primary"
+                    disabled={page === 1 || loading}
+                    onClick={() =>
+                      fetchSearchResults(page - 1, pageSize, searchTerm)
+                    }
+                  >
+                    Previous
+                  </Button>
+                </div>
+                <span>
+                  Page {page} of {Math.ceil(totalCount / pageSize)}
+                </span>
+                <Button
+                  color="primary"
+                  disabled={page * pageSize >= totalCount || loading}
+                  onClick={() =>
+                    fetchSearchResults(page + 1, pageSize, searchTerm)
+                  }
                 >
                   Next
                 </Button>
@@ -519,31 +709,9 @@ useEffect(() => {
               </div>
             </Card>
           </Col>
-          <Col sm="3">
-            <Card
-              className="shadow"
-              style={{ height: "700px", overflowY: "auto" }}
-            >
-              <CardHeader className="border-0">
-                {" "}
-                {/* Reduce bottom padding */}
-                <h3>Apply Filters</h3> {/* Reduce bottom margin */}
-              </CardHeader>
-
-              <CardBody>
-                {" "}
-                {/* Use minimal padding inside body */}
-                <TranscriptFilter />
-                <br />
-                {/* {/* <WitnessTypeFilter /> */}
-                {/* <WitnessAlignmentFilter /> */}
-                <WitnessFilter />
-                <br />
-              </CardBody>
-            </Card>
-          </Col>
         </Row>
       </Container>
+      <FilterIcon />
     </>
   );
 };

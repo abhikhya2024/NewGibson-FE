@@ -131,33 +131,35 @@ const Index = () => {
   // }, [selectedWitnesses]);
 
   // Apply transcript filter
-  const fetchSearchResults = async (newPage, overridePageSize = pageSize, searchText) => {
+  const fetchSearchResults = async (
+    newPage,
+    overridePageSize = pageSize,
+    searchText
+  ) => {
     setLoading(true);
 
     try {
- 
-        // 🔹 Fetch testimonies for selected witnesses
-        const transcript_names = selectedTranscripts.map((t) =>
-          `${t.name}`.trim()
-        );
+      // 🔹 Fetch testimonies for selected witnesses
+      const transcript_names = selectedTranscripts.map((t) =>
+        `${t.name}`.trim()
+      );
 
-        const names = selectedWitnesses.map((w) =>
-          `${w.first_name} ${w.last_name}`.trim()
-        );
-        const res = await axios.post(
-          `http://localhost:8000/api/testimony/combined-search/?page=${newPage}&page_size=${overridePageSize}`,
+      const names = selectedWitnesses.map((w) =>
+        `${w.first_name} ${w.last_name}`.trim()
+      );
+      const res = await axios.post(
+        `http://localhost:8000/api/testimony/combined-search/?page=${newPage}&page_size=${overridePageSize}`,
 
-          {
-            q: searchText,
-            mode: selected,
-            witness_names: names,
-            transcript_names: transcript_names,
-          }
-        );
-        setQaPairs(res.data.results || []);
-        setTotalCount(res.data.count || 0);
-        setPage(newPage);
-      
+        {
+          q: searchText,
+          mode: selected,
+          witness_names: names,
+          transcript_names: transcript_names,
+        }
+      );
+      setQaPairs(res.data.results || []);
+      setTotalCount(res.data.count || 0);
+      setPage(newPage);
     } catch (err) {
       console.error("Failed to fetch testimonies:", err);
     } finally {
@@ -165,9 +167,9 @@ const Index = () => {
     }
   };
 
-useEffect(() => {
-  fetchSearchResults(1, pageSize, searchTerm); // Reset to page 1 on filter change
-}, [selectedWitnesses, selectedTranscripts]);
+  useEffect(() => {
+    fetchSearchResults(1, pageSize, searchTerm); // Reset to page 1 on filter change
+  }, [selectedWitnesses, selectedTranscripts]);
 
   useEffect(() => {
     fetchPaginatedData(1); // Load first page
@@ -295,13 +297,8 @@ useEffect(() => {
     toggle();
   };
 
-  const filteredQaPairs = searchTerm.trim()
-    ? qaPairs.filter((qa) => {
-        const key = qa.question + qa.answer + qa.cite;
-        // + qa.filename;
-        return highlightResults[key];
-      })
-    : qaPairs;
+const filteredQaPairs = qaPairs;
+
 
   return (
     <>
@@ -330,7 +327,7 @@ useEffect(() => {
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchTerm(value);
-                  fetchSearchResults(value); // ✅ pass value directly
+fetchSearchResults(1, pageSize, searchTerm);
                 }}
               />
             </InputGroup>
@@ -393,7 +390,7 @@ useEffect(() => {
               <CardHeader className="border-0">
                 <h3 className="mb-0">Transcript QA Table</h3>
               </CardHeader>
-              <div>
+              {/* <div>
                 <ul>
                   {selectedWitnesses.map((w) => (
                     <li key={w.id}>{`${w.first_name} ${w.last_name}`}</li>
@@ -407,7 +404,7 @@ useEffect(() => {
                     <li key={t.id}>{`${t.name} ${t.name}`}</li>
                   ))}
                 </ul>
-              </div>
+              </div> */}
               <Table className="align-items-center table-flush" responsive>
                 <thead className="thead-light">
                   <tr>
@@ -417,17 +414,6 @@ useEffect(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* {filteredQaPairs.map((qa, index) => {
-                  const key = qa.question + qa.answer + qa.cite;
-                  const highlight = highlightResults[key]?.highlights || {};
-                  return (
-                    <tr key={index}>
-                      <td>{renderCell(qa.question, highlight.question || [])}</td>
-                      <td>{renderCell(qa.answer, highlight.answer || [])}</td>
-                      <td>{renderCell(qa.cite, highlight.cite || [])}</td>
-                    </tr>
-                  );
-                })} */}
                   {filteredQaPairs.map((qa, index) => {
                     const questionHighlights = getHighlights(
                       qa.question,
@@ -471,7 +457,7 @@ useEffect(() => {
               </div> */}
               <div className="d-flex justify-content-between align-items-center p-3">
                 <div className="d-flex align-items-center">
-                  <Button
+                  {/* <Button
                     color="primary"
                     disabled={page === 1 || loading}
                     onClick={() => fetchPaginatedData(page - 1)}
@@ -488,6 +474,28 @@ useEffect(() => {
                   color="primary"
                   disabled={page * pageSize >= totalCount || loading}
                   onClick={() => fetchPaginatedData(page + 1)}
+                >
+                  Next
+                </Button> */}
+                  <Button
+                    color="primary"
+                    disabled={page === 1 || loading}
+                    onClick={() =>
+                      fetchSearchResults(page - 1, pageSize, searchTerm)
+                    }
+                  >
+                    Previous
+                  </Button>
+                </div>
+                <span>
+                  Page {page} of {Math.ceil(totalCount / pageSize)}
+                </span>
+                <Button
+                  color="primary"
+                  disabled={page * pageSize >= totalCount || loading}
+                  onClick={() =>
+                    fetchSearchResults(page + 1, pageSize, searchTerm)
+                  }
                 >
                   Next
                 </Button>

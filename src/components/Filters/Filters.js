@@ -37,7 +37,16 @@ const WitnessFilter = () => {
       <Table responsive>
         <thead>
           <tr>
-            <th>Witness Name</th>
+            <th 
+            style={{
+            backgroundColor: "#11abef",
+            color: "white",
+            fontWeight: "600",
+            fontSize: "11px",
+          }}
+            >
+              Witness Name
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -169,36 +178,16 @@ const TranscriptFilter = () => {
             backgroundColor: "#11abef",
             color: "white",
             fontWeight: "600",
-            fontSize: "13px",
+            fontSize: "11px",
+            position: "sticky",
+
           }}
         >
           <tr>
-            <th scope="col">Select</th>
             <th scope="col">Transcript</th>
           </tr>
         </thead>
         <tbody>
-          {/* {transcripts.map((tn, index) => (
-            <tr key={index}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selectedTranscripts.has(tn.name)}
-                  onChange={() => handleCheckboxChange(tn.name)}
-                />
-              </td>
-              <td
-                style={{
-                  whiteSpace: "normal",
-                  wordWrap: "break-word",
-                  padding: "5px 10px",
-                  fontSize: "11px",
-                }}
-              >
-                {tn.name}
-              </td>
-            </tr>
-          ))} */}
           {transcripts.map((tn) => {
             const isSelected = selectedTranscriptIds.has(tn.id);
 

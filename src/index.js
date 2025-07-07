@@ -25,21 +25,41 @@ import "assets/scss/argon-dashboard-react.scss";
 
 import AdminLayout from "layouts/Admin.js";
 import AuthLayout from "layouts/Auth.js";
+import LoginPage from "components/Auth/LoginPage";
+
 import "style.css";
 import { ContextProvider } from "./providers/Context";
+import { PublicClientApplication } from "@azure/msal-browser";
+import { MsalProvider } from "@azure/msal-react";
+import { msalConfig } from "./authConfig";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+const msalInstance = new PublicClientApplication(msalConfig);
 
+// ✅ Handle redirect response here
+msalInstance.handleRedirectPromise().then((response) => {
+  if (response !== null && response.account) {
+    msalInstance.setActiveAccount(response.account);
+    // ✅ Optional: Automatically redirect user after login
+    window.location.href = "/admin/user-profile"; // Change this to your desired route
+  }
+}).catch((error) => {
+  console.error("Redirect error:", error);
+});
 root.render(
   <BrowserRouter>
+    <MsalProvider instance={msalInstance}>
+
     <ContextProvider>
       {" "}
       {/* 👈 Wrap your app with this */}
       <Routes>
         <Route path="/admin/*" element={<AdminLayout />} />
         <Route path="/auth/*" element={<AuthLayout />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="*" element={<Navigate to="/admin/index" replace />} />
       </Routes>
     </ContextProvider>
+    </MsalProvider>
   </BrowserRouter>
 );

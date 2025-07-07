@@ -33,8 +33,16 @@ import {
   Container,
   Media,
 } from "reactstrap";
+import { useMsal } from "@azure/msal-react";
 
 const AdminNavbar = (props) => {
+    const { instance } = useMsal();
+
+const handleLogout = (e) => {
+  e.preventDefault();
+  instance.logoutRedirect(); // 👈 This will redirect to /login after logout
+};
+
   return (
     <>
       <Navbar className="navbar-top navbar-dark" expand="md" id="navbar-main">
@@ -95,7 +103,7 @@ const AdminNavbar = (props) => {
                   <span>Support</span>
                 </DropdownItem>
                 <DropdownItem divider />
-                <DropdownItem href="#pablo" onClick={(e) => e.preventDefault()}>
+                <DropdownItem href="#pablo" onClick={(e) => handleLogout(e)}>
                   <i className="ni ni-user-run" />
                   <span>Logout</span>
                 </DropdownItem>

@@ -76,11 +76,11 @@ const Admin = (props) => {
         
       />
       <div className="main-content" ref={mainContent}>
-        <img
+        {/* <img
   src={require("../assets/img/brand/cloudcourt.png")}
   alt="..."
   style={{ height: "100px" }}
-/>
+/> */}
 
         <AdminNavbar
           {...props}

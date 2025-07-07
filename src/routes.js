@@ -22,34 +22,35 @@ import Register from "views/examples/Register.js";
 import Login from "views/examples/Login.js";
 import Tables from "views/examples/Tables.js";
 import Icons from "views/examples/Icons.js";
+import LoginPage from "components/Auth/LoginPage";
 
 var routes = [
-  {
-    path: "/index",
-    name: "Home",
-    icon: "ni ni-tv-2 text-primary",
-    component: <Index />,
-    layout: "/admin",
-  },
-  {
-    path: "/icons",
-    name: "Support",
-    icon: "ni ni-planet text-blue",
-    component: <Icons />,
-    layout: "/admin",
-  },
-  {
-    path: "/maps",
-    name: "Quick Start",
-    icon: "ni ni-pin-3 text-orange",
-    component: <Maps />,
-    layout: "/admin",
-  },
+  // {
+  //   path: "/index",
+  //   name: "Home",
+  //   icon: "ni ni-tv-2 text-primary",
+  //   component: <Icons />,
+  //   layout: "/admin",
+  // },
+  // {
+  //   path: "/icons",
+  //   name: "Support",
+  //   icon: "ni ni-planet text-blue",
+  //   component: <Icons />,
+  //   layout: "/admin",
+  // },
+  // {
+  //   path: "/maps",
+  //   name: "Quick Start",
+  //   icon: "ni ni-pin-3 text-orange",
+  //   component: <Maps />,
+  //   layout: "/admin",
+  // },
   {
     path: "/user-profile",
     name: "Search All Testimony",
     icon: "ni ni-single-02 text-yellow",
-    component: <Profile />,
+    component: <Index />,
     layout: "/admin",
   },
   {
@@ -61,28 +62,28 @@ var routes = [
   },
   {
     path: "/login",
-    name: "Transcripts by Witness",
+    name: "Transcripts",
     icon: "ni ni-key-25 text-info",
-    component: <Login />,
+    component: <LoginPage />,
     layout: "/auth",
   },
+  // {
+  //   path: "/register",
+  //   name: "Transcripts by Atty",
+  //   icon: "ni ni-single-02 text-yellow",
+  //   component: <Register />,
+  //   layout: "/auth",
+  // },
+  // {
+  //   path: "/register",
+  //   name: "Topics by Witness",
+  //   icon: "ni ni-circle-08 text-pink",
+  //   component: <Register />,
+  //   layout: "/auth",
+  // },
   {
     path: "/register",
-    name: "Transcripts by Atty",
-    icon: "ni ni-single-02 text-yellow",
-    component: <Register />,
-    layout: "/auth",
-  },
-  {
-    path: "/register",
-    name: "Topics by Witness",
-    icon: "ni ni-circle-08 text-pink",
-    component: <Register />,
-    layout: "/auth",
-  },
-  {
-    path: "/register",
-    name: "Topic Map",
+    name: "Topics",
     icon: "ni ni-pin-3 text-orange",
     component: <Register />,
     layout: "/auth",
