@@ -1,6 +1,7 @@
 :root {
     --primary-hp-color: #11cdef;
     --secondary-hp-color: #1171ef;
+    --text-light-hp-color: #6c757d;
 }
 
 body {
@@ -177,7 +178,12 @@ li.btn-style2:hover a, .active2 a {
 .show-page-sorath, .custom-rows-dropdown button, .colum-3-sorath button {
     padding: 10px;
     box-shadow: 2px 2px 10px #80808030;
-    border: none;
+    border: none !important;
+}
+.colum-3-sorath button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 /* table 3 */
@@ -198,7 +204,7 @@ li.btn-style2:hover a, .active2 a {
 
 .badge-secondary.soft-badge {
   background-color: rgba(108, 117, 125, 0.1);
-  color: #6c757d;
+  color: var(--text-light-hp-color);
 }
 
 thead.table-sorath-three th {
@@ -214,5 +220,25 @@ button.filter-sorath-btn.btn.btn-outline-primary.btn-sm {
     box-shadow: 2px 2px 10px #80808030;
 }
 .filter-sorath-btn svg.filter-sorath {
-    stroke: #6c757d;
+    stroke: var(--text-light-hp-color);
+}
+.filter-drp-sorath {
+  white-space: normal;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  max-height: 100px;
+  color: var(--text-light-hp-color);
+}
+
+.form-check-input, .form-check .form-check-input {
+  margin-left: 0;
+  margin-right: 10px;
+}
+
+.form-check {
+  padding-left: 0;
 }
