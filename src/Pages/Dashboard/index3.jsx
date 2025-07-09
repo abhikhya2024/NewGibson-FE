@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import Filter from '../../components/Filter';
 import { FiFilter } from 'react-icons/fi';
 import {
@@ -16,6 +17,29 @@ import {
 } from 'react-bootstrap';
 
 const EnhancedTable = () => {
+    const [loading, setLoading] = useState(false);
+  const [qaPairs, setQaPairs] = useState([]);
+
+  const fetchPaginatedData = async () => {
+
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/api/testimony/`
+      );
+      setQaPairs(res.data.results);
+
+    } catch (err) {
+      console.error("Failed to fetch paginated data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(()=> {
+    console.log("useeffect")
+    fetchPaginatedData()
+  },[])
   const allData = [
     {
       name: 'Ralph Edwards',
@@ -90,13 +114,13 @@ const handleShowFilters = () => setShowFilters(true);
   };
 
   const getFilteredSortedData = () => {
-    let filtered = allData.filter(item =>
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.phone.toLowerCase().includes(search.toLowerCase())
-    );
+    // let filtered = qaPairs.filter(item =>
+    //   item.name.toLowerCase().includes(search.toLowerCase()) ||
+    //   item.phone.toLowerCase().includes(search.toLowerCase())
+    // );
 
     if (sortConfig.key) {
-      filtered = [...filtered].sort((a, b) => {
+      qaPairs = [...qaPairs].sort((a, b) => {
         const aVal = a[sortConfig.key];
         const bVal = b[sortConfig.key];
         if (typeof aVal === 'number') {
@@ -109,7 +133,7 @@ const handleShowFilters = () => setShowFilters(true);
       });
     }
 
-    return filtered;
+    return qaPairs;
   };
 
   const toggleColumn = (key) => {
@@ -135,7 +159,7 @@ const handleShowFilters = () => setShowFilters(true);
   return (
     <Container fluid className="py-4 px-3">
       <Card className="p-4 show-page-sorath">
-      <h2 className="mb-4">Table</h2>
+      <h2 className="mb-4">Testimonies</h2>
       {/* Top Search & Columns */}
       <Row className="mb-3">
         <Col md={6}>
@@ -172,78 +196,30 @@ const handleShowFilters = () => setShowFilters(true);
       </Row>
 
       {/* Table */}
-      <Table responsive bordered className="align-middle text-nowrap rounded-3">
-        <thead className="table-sorath-three">
-          <tr>
-            {visibleColumns.name && (
-              <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                CUSTOMER {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
-            )}
-            {visibleColumns.status && (
-              <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                STATUS {sortConfig.key === 'status' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
-            )}
-            {visibleColumns.rate && (
-              <th onClick={() => handleSort('rate')} style={{ cursor: 'pointer' }}>
-                RATE {sortConfig.key === 'rate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
-            )}
-            {visibleColumns.balance && (
-              <th onClick={() => handleSort('balance')} style={{ cursor: 'pointer' }}>
-                BALANCE {sortConfig.key === 'balance' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
-            )}
-            {visibleColumns.deposit && (
-              <th onClick={() => handleSort('deposit')} style={{ cursor: 'pointer' }}>
-                DEPOSIT {sortConfig.key === 'deposit' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
-            )}
-            {visibleColumns.actions && <th>ACTIONS</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedData.map((row, idx) => (
-            <tr key={idx}>
-              {visibleColumns.name && (
-                <td>
-                  <div className="d-flex align-items-center gap-2">
-                    <Image
-                      src={row.image}
-                      roundedCircle
-                      width={36}
-                      height={36}
-                      alt={row.name}
-                    />
-                    <div>
-                      <strong>{row.name}</strong><br />
-                      <small className="text-muted">{row.phone}</small>
-                    </div>
-                  </div>
-                </td>
-              )}
-              {visibleColumns.status && <td>{getStatusBadge(row.status)}</td>}
-              {visibleColumns.rate && <td>${row.rate.toFixed(2)} USD</td>}
-              {visibleColumns.balance && (
-                <td style={{ color: row.balance < 0 ? 'red' : 'green' }}>
-                  ${row.balance.toFixed(2)} USD
-                </td>
-              )}
-              {visibleColumns.deposit && <td>${row.deposit.toFixed(2)} USD</td>}
-              {visibleColumns.actions && (
-                <td>
-                  <div className="d-flex gap-2">
-                    <Button variant="outline-primary" size="sm">View</Button>
-                    <Button variant="outline-success" size="sm">Edit</Button>
-                    <Button variant="outline-danger" size="sm">Delete</Button>
-                  </div>
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+<Table responsive bordered className="align-middle rounded-3">
+  <thead className="table-sorath-three">
+    <tr>
+      <th style={{ width: "100px" }}>Filename and Cite</th>
+      <th style={{ width: "100px" }}>Question and Answers</th>
+    </tr>
+  </thead>
+  <tbody>
+    {paginatedData.map((row, idx) => (
+      <tr key={idx}>
+        <td style={{ width: "100px" }}>
+          {row.transcript_name}
+          <br />
+          {row.cite}
+        </td>
+        <td style={{ width: "100px" }}>
+          {row.question}
+          <br />
+          {row.answer}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</Table>
 
       {/* Footer Pagination */}
       <Row className="px-1 py-3 align-items-center">

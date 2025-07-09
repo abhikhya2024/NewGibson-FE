@@ -38,9 +38,9 @@ useEffect(() => {
       <div className="sidebar-header d-flex align-items-center p-3 border-bottom border-secondary">
         <div className="d-flex align-items-center">
           <div className="logo-box bg-primary text-white fw-bold me-2 d-flex justify-content-center align-items-center">
-            PS
+            GB
           </div>
-          {isOpen && <h5 className="mb-0">Panasonic</h5>}
+          {isOpen && <h5 className="mb-0">Gibson</h5>}
         </div>
       </div>
 
@@ -55,7 +55,7 @@ useEffect(() => {
             title="Dashboard"
           >
             <i className="bi bi-house"></i>
-            <span className="menu-text ms-3">Dashboard</span>
+            <span className="menu-text ms-3">Seatch All Testimony</span>
           </Link>
         </li>
         <li className={`btn-style2 px-3 ${location.pathname === '/dashboard2' ? 'active2' : ''}`}>
@@ -67,7 +67,7 @@ useEffect(() => {
             title="Dashboard2"
           >
             <i className="bi bi-person"></i>
-            <span className="menu-text ms-3">Dashboard 2</span>
+            <span className="menu-text ms-3">Testimony by Topic</span>
           </Link>
         </li>
         <li className={`btn-style2 px-3 ${location.pathname === '/dashboard3' ? 'active3' : ''}`}>
@@ -79,7 +79,43 @@ useEffect(() => {
             title="Settings"
           >
             <i className="bi bi-gear"></i>
-            <span className="menu-text ms-3">Dashboard 3</span>
+            <span className="menu-text ms-3">Transcripts</span>
+          </Link>
+        </li>
+        <li className={`btn-style2 px-3`}>
+          <Link
+            className="text-decoration-none d-flex align-items-center"
+            to="/dashboard3"
+            data-bs-toggle="tooltip"
+            data-bs-placement="right"
+            title="Settings"
+          >
+            <i className="bi bi-gear"></i>
+            <span className="menu-text ms-3">Topics</span>
+          </Link>
+        </li>
+        <li className={`btn-style2 px-3`}>
+          <Link
+            className="text-decoration-none d-flex align-items-center"
+            to="/dashboard3"
+            data-bs-toggle="tooltip"
+            data-bs-placement="right"
+            title="Settings"
+          >
+            <i className="bi bi-gear"></i>
+            <span className="menu-text ms-3">Topics by Frequency</span>
+          </Link>
+        </li>
+        <li className={`btn-style2 px-3`}>
+          <Link
+            className="text-decoration-none d-flex align-items-center"
+            to="/dashboard3"
+            data-bs-toggle="tooltip"
+            data-bs-placement="right"
+            title="Settings"
+          >
+            <i className="bi bi-gear"></i>
+            <span className="menu-text ms-3">Word Cloud</span>
           </Link>
         </li>
       </ul>

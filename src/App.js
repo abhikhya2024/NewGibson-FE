@@ -13,7 +13,7 @@ import './assets/css/style.css';
 
 function App() {
   return (
-    <BrowserRouter basename="/cogproject-1">
+    <BrowserRouter>
 
       <Routes>
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
