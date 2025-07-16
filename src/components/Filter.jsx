@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Offcanvas, Form, Dropdown, Button } from "react-bootstrap";
 import { Sliders } from "react-bootstrap-icons";
+import BASE_URL from "../api";
 
 const Filter = ({
   show,
@@ -21,7 +22,7 @@ const Filter = ({
 
   const fetchTranscripts = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/transcript/");
+      const res = await fetch(`${BASE_URL}/api/transcript/`);
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
       setTranscript(data.transcripts);
@@ -32,7 +33,7 @@ const Filter = ({
 
   const fetchWitness = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/witness/");
+      const res = await fetch(`${BASE_URL}/api/witness/`);
       const data = await res.json();
       setWitness(data.witnesses);
     } catch (err) {
@@ -42,7 +43,7 @@ const Filter = ({
 
   const fetchWitnessType = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/witness-type/");
+      const res = await fetch(`${BASE_URL}/api/witness-type/`);
       const data = await res.json();
       setWitnessType(data.witnesses);
     } catch (err) {
@@ -52,7 +53,7 @@ const Filter = ({
 
   const fetchWitnessAlignment = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/witness-alignment/");
+      const res = await fetch(`${BASE_URL}/api/witness-alignment/`);
       const data = await res.json();
       setWitnessAlighment(data.witnesses);
     } catch (err) {

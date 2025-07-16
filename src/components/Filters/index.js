@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { Card, Table } from "react-bootstrap";
+import BASE_URL from "../../api";
 
 const WitnessFilter = () => {
   const [witnesses, setWitnesses] = useState([]);
@@ -8,7 +9,7 @@ const WitnessFilter = () => {
 
 
   const fetchWitness = async () => {
-    const res = await fetch("http://localhost:8000/api/witness/");
+    const res = await fetch(`${BASE_URL}/api/witness/`);
     const data = await res.json();
     setWitnesses(data.witnesses);
   };
@@ -68,7 +69,7 @@ const TranscriptFilter = () => {
 
   const fetchTranscripts = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/transcript/");
+      const res = await fetch(`${BASE_URL}/api/transcript/`);
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
       setTranscripts(data.transcripts);
