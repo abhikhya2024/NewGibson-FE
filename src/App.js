@@ -12,6 +12,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './assets/css/style.css';
 
 function App() {
+  
   return (
     <BrowserRouter>
 

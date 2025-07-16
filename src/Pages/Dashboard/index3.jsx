@@ -15,6 +15,7 @@ import {
   Badge,
 } from "react-bootstrap";
 import Filter from "../../components/Filter";
+import BASE_URL from "../../api";
 
 const EnhancedTable = () => {
   const [selectedTranscripts, setSelectedTranscripts] = useState([]);
@@ -49,7 +50,7 @@ const EnhancedTable = () => {
   const fetchPaginatedData = async (page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:8000/api/testimony/`, {
+      const res = await axios.get(`${BASE_URL}/api/testimony/`, {
         params: {
           page,
           page_size: pageSize,
