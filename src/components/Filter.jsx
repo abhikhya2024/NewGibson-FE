@@ -1,61 +1,133 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Offcanvas, Form, Dropdown, Button } from "react-bootstrap";
 import { Sliders } from "react-bootstrap-icons";
 
-const Filter = ({ show, handleClose }) => {
-  // State to manage selected transcripts
-  const transcriptOptions = [
-    "Transcript A",
-    "Transcript B",
-    "Transcript C",
-    "Transcript D",
-    "Transcript E",
-  ];
+const Filter = ({
+  show,
+  handleClose,
+  sendTranscriptToParent,
+  sendWitnessToParent,
+  sendWitnessTypeToParent,
+  totalCount
+}) => {
+  const [transcript, setTranscript] = useState([]);
+  const [witness, setWitness] = useState([]);
+  const [witnessType, setWitnessType] = useState([]);
+  const [witnessAlignment, setWitnessAlighment] = useState([]);
   const [selectedTranscripts, setSelectedTranscripts] = useState([]);
-
-  const handleTranscriptCheck = (option) => {
-    setSelectedTranscripts((prevSelected) =>
-      prevSelected.includes(option)
-        ? prevSelected.filter((item) => item !== option)
-        : [...prevSelected, option]
-    );
-  };
-  // Witness
-  const witnessOptions = [
-    "Witness X",
-    "Witness Y",
-    "Witness Z",
-    "Witness Alpha",
-    "Witness Beta",
-  ];
   const [selectedWitnesses, setSelectedWitnesses] = useState([]);
-  const handleWitnessCheck = (option) => {
-    setSelectedWitnesses((prev) =>
-      prev.includes(option)
-        ? prev.filter((item) => item !== option)
-        : [...prev, option]
+  const [selectedAlignments, setSelectedAlignments] = useState([]);
+  const [selectedWitnessTypes, setSelectedWitnessTypes] = useState([]);
+
+  const fetchTranscripts = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/transcript/");
+      if (!res.ok) throw new Error(`Error: ${res.status}`);
+      const data = await res.json();
+      setTranscript(data.transcripts);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const fetchWitness = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/witness/");
+      const data = await res.json();
+      setWitness(data.witnesses);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const fetchWitnessType = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/witness-type/");
+      const data = await res.json();
+      setWitnessType(data.witnesses);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const fetchWitnessAlignment = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/witness-alignment/");
+      const data = await res.json();
+      setWitnessAlighment(data.witnesses);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+  useEffect(() => {
+    fetchTranscripts();
+    fetchWitness();
+    fetchWitnessType();
+    fetchWitnessAlignment();
+  }, []);
+
+  // Deduplicate by name
+  const uniqueTranscripts = Array.from(
+    new Map(transcript.map((item) => [item.name, item])).values()
+  );
+  const uniqueWitnesses = Array.from(
+    new Map(
+      witness.map((item) => [`${item.first_name} ${item.last_name}`, item])
+    ).values()
+  );
+
+  // Send to parent on change
+  useEffect(() => {
+    if (typeof sendTranscriptToParent === "function") {
+      sendTranscriptToParent(selectedTranscripts);
+    }
+  }, [selectedTranscripts]);
+
+  useEffect(() => {
+    if (typeof sendWitnessToParent === "function") {
+      sendWitnessToParent(selectedWitnesses);
+    }
+  }, [selectedWitnesses]);
+
+  useEffect(() => {
+    if (typeof sendWitnessTypeToParent === "function") {
+      sendWitnessTypeToParent(selectedWitnessTypes);
+    }
+  }, [selectedWitnessTypes]);
+  // Store only transcript names
+  const handleTranscriptCheck = (option) => {
+    setSelectedTranscripts((prev) =>
+      prev.includes(option.name)
+        ? prev.filter((name) => name !== option.name)
+        : [...prev, option.name]
     );
   };
-  // Witness Alignment
-  const [selectedAlignments, setSelectedAlignments] = useState([]);
-const handleAlignmentChange = (alignment) => {
-  setSelectedAlignments((prevSelected) =>
-    prevSelected.includes(alignment)
-      ? prevSelected.filter((item) => item !== alignment)
-      : [...prevSelected, alignment]
-  );
-};
 
-  // Witness Type
-  const [selectedWitnessTypes, setSelectedWitnessTypes] = useState([]);
-const handleWitnessTypeChange = (type) => {
-  setSelectedWitnessTypes((prevSelected) =>
-    prevSelected.includes(type)
-      ? prevSelected.filter((item) => item !== type)
-      : [...prevSelected, type]
-  );
-};
+  // Store only witness full names (string)
+  const handleWitnessCheck = (option) => {
+    const fullName = `${option.first_name} ${option.last_name}`;
+    setSelectedWitnesses((prev) =>
+      prev.includes(fullName)
+        ? prev.filter((name) => name !== fullName)
+        : [...prev, fullName]
+    );
+  };
 
+  const handleAlignmentChange = (alignment) => {
+    setSelectedAlignments((prev) =>
+      prev.includes(alignment)
+        ? prev.filter((item) => item !== alignment)
+        : [...prev, alignment]
+    );
+  };
+
+  const handleWitnessTypeChange = (type) => {
+    setSelectedWitnessTypes((prev) =>
+      prev.includes(type)
+        ? prev.filter((item) => item !== type)
+        : [...prev, type]
+    );
+  };
 
   return (
     <Offcanvas show={show} onHide={handleClose} placement="end">
@@ -69,16 +141,16 @@ const handleWitnessTypeChange = (type) => {
           {/* Transcript Filter */}
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">Transcript</Form.Label>
-            <Dropdown className="w-100 colum-3-sorath">
+            <Dropdown className="w-100">
               <Dropdown.Toggle
                 variant="light"
-                className="w-100 text-start border rounded-2 filter-drp-sorath"
+                className="w-100 text-start border rounded-2"
               >
                 {selectedTranscripts.length > 0 ? (
                   <div className="d-flex flex-wrap gap-1">
-                    {selectedTranscripts.map((item, idx) => (
+                    {selectedTranscripts.map((name, idx) => (
                       <span key={idx} className="badge bg-primary">
-                        {item}
+                        {name}
                       </span>
                     ))}
                   </div>
@@ -86,18 +158,15 @@ const handleWitnessTypeChange = (type) => {
                   "Select transcript(s)"
                 )}
               </Dropdown.Toggle>
-
-              <Dropdown.Menu
-                className="w-100 border rounded-2 shadow"
-                style={{ maxHeight: "200px", overflowY: "auto" }}
-              >
-                {transcriptOptions.map((option, idx) => (
+              <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
+                {uniqueTranscripts.map((option) => (
                   <Form.Check
-                    key={idx}
+                    key={option.id}
                     type="checkbox"
-                    label={option}
+                    label={option.name}
                     className="px-3 py-1"
-                    checked={selectedTranscripts.includes(option)}
+                    style={{ whiteSpace: "nowrap" }}
+                    checked={selectedTranscripts.includes(option.name)}
                     onChange={() => handleTranscriptCheck(option)}
                   />
                 ))}
@@ -108,16 +177,16 @@ const handleWitnessTypeChange = (type) => {
           {/* Witness Filter */}
           <Form.Group className="mb-4">
             <Form.Label className="fw-semibold">Witness</Form.Label>
-            <Dropdown className="w-100 colum-3-sorath">
+            <Dropdown className="w-100">
               <Dropdown.Toggle
                 variant="light"
-                className="w-100 text-start border rounded-2 filter-drp-sorath"
+                className="w-100 text-start border rounded-2"
               >
                 {selectedWitnesses.length > 0 ? (
                   <div className="d-flex flex-wrap gap-1">
-                    {selectedWitnesses.map((item, idx) => (
+                    {selectedWitnesses.map((name, idx) => (
                       <span key={idx} className="badge bg-success">
-                        {item}
+                        {name}
                       </span>
                     ))}
                   </div>
@@ -125,64 +194,62 @@ const handleWitnessTypeChange = (type) => {
                   "Select witness(es)"
                 )}
               </Dropdown.Toggle>
-
-              <Dropdown.Menu
-                className="w-100 border rounded-2 shadow"
-                style={{ maxHeight: "200px", overflowY: "auto" }}
-              >
-                {witnessOptions.map((option, idx) => (
-                  <Form.Check
-                    key={idx}
-                    type="checkbox"
-                    label={option}
-                    className="px-3 py-1"
-                    checked={selectedWitnesses.includes(option)}
-                    onChange={() => handleWitnessCheck(option)}
-                  />
-                ))}
+              <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
+                {uniqueWitnesses.map((option) => {
+                  const fullName = `${option.first_name} ${option.last_name}`;
+                  return (
+                    <Form.Check
+                      key={option.id}
+                      type="checkbox"
+                      label={fullName}
+                      className="px-3 py-1"
+                      checked={selectedWitnesses.includes(fullName)}
+                      onChange={() => handleWitnessCheck(option)}
+                    />
+                  );
+                })}
               </Dropdown.Menu>
             </Dropdown>
           </Form.Group>
 
           {/* Witness Alignment */}
-<Form.Group className="mb-4">
-  <Form.Label className="fw-semibold">Witness Alignment</Form.Label>
-  <div className="d-flex flex-wrap gap-3 ps-1">
-    {["Left", "Center", "Right"].map((alignment) => (
-      <Form.Check
-        key={alignment}
-        type="checkbox"
-        label={alignment}
-        value={alignment}
-        checked={selectedAlignments.includes(alignment)}
-        onChange={() => handleAlignmentChange(alignment)}
-      />
-    ))}
-  </div>
-</Form.Group>
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-semibold">Witness Alignment</Form.Label>
+            <div className="d-flex flex-wrap gap-3 ps-1">
+              {witnessAlignment.map((alignment) => (
+                <Form.Check
+                  key={alignment.alignment}
+                  type="checkbox"
+                  label={alignment.alignment}
+                  value={alignment.alignment}
+                  checked={selectedAlignments.includes(alignment.alignment)}
+                  onChange={() => handleAlignmentChange(alignment.alignment)}
+                />
+              ))}
+            </div>
+          </Form.Group>
 
           {/* Witness Type */}
-<Form.Group className="mb-4">
-  <Form.Label className="fw-semibold">Witness Type</Form.Label>
-  <div className="d-flex flex-wrap gap-3 ps-1">
-    {["Eyewitness", "Expert", "Anonymous"].map((type) => (
-      <Form.Check
-        key={type}
-        type="checkbox"
-        label={type}
-        value={type}
-        checked={selectedWitnessTypes.includes(type)}
-        onChange={() => handleWitnessTypeChange(type)}
-      />
-    ))}
-  </div>
-</Form.Group>
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-semibold">Witness Type</Form.Label>
+            <div className="d-flex flex-wrap gap-3 ps-1">
+              {witnessType.map((typeObj) => (
+                <Form.Check
+                  key={typeObj.type}
+                  type="checkbox"
+                  label={typeObj.type}
+                  value={typeObj.type}
+                  checked={selectedWitnessTypes.includes(typeObj.type)}
+                  onChange={() => handleWitnessTypeChange(typeObj.type)}
+                />
+              ))}
+            </div>
+          </Form.Group>
 
-
-          {/* Testimony Count Box */}
+          {/* Testimony Count */}
           <div className="bg-primary text-white text-center py-3 px-2 rounded-3">
             <h6 className="mb-1">Testimony Count</h6>
-            <h2 className="fw-bold mb-0">37</h2>
+            <h2 className="fw-bold mb-0">{totalCount}</h2>
           </div>
 
           {/* Apply & Reset */}
@@ -190,7 +257,7 @@ const handleWitnessTypeChange = (type) => {
             <Button variant="secondary" onClick={handleClose}>
               Close
             </Button>
-            <Button variant="primary" onClick={() => alert("Apply clicked")}>
+            <Button variant="primary" onClick={handleClose}>
               Apply Filters
             </Button>
           </div>

@@ -14,21 +14,38 @@ import {
   DropdownButton,
   Badge,
 } from "react-bootstrap";
-import Filter from '../../components/Filter';
+import Filter from "../../components/Filter";
 
 const EnhancedTable = () => {
+  const [selectedTranscripts, setSelectedTranscripts] = useState([]);
+
+  const handleTranscriptFromChild = (data) => {
+    setSelectedTranscripts(data);
+  };
+
+  const [selectedWitness, setSelectedWitness] = useState([]);
+
+  const handleWitnessFromChild = (data) => {
+    setSelectedWitness(data);
+  };
+
+  const [selectedWitnessType, setSelectedWitnessType] = useState([]);
+
+  const handleWitnessTypeFromChild = (data) => {
+    setSelectedWitnessType(data);
+  };
   const [loading, setLoading] = useState(false);
   const [qaPairs, setQaPairs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [totalCount, setTotalCount] = useState(0);
-  const [search, setSearch] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: '', direction: '' });
+  const [search, setSearch] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "", direction: "" });
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const handleShowFilters = () => setShowFilters(true);
   const handleCloseFilters = () => setShowFilters(false);
-  
+
   const fetchPaginatedData = async (page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
     try {
@@ -36,6 +53,8 @@ const EnhancedTable = () => {
         params: {
           page,
           page_size: pageSize,
+          // q: searchA,
+          // mode: searchAType
         },
       });
       setQaPairs(res.data.results);
@@ -50,7 +69,6 @@ const EnhancedTable = () => {
   useEffect(() => {
     fetchPaginatedData(currentPage, rowsPerPage);
   }, [currentPage, rowsPerPage]);
-
 
   const [showSearchSection, setShowSearchSection] = useState(false);
 
@@ -79,16 +97,79 @@ const EnhancedTable = () => {
     setSortConfig({ key, direction });
   };
 
-  const handleSearchSubmit = () => {
-    setAppliedSearch({
-      A: searchA,
-      B: searchB,
-      C: searchC,
-      AType: searchAType,
-      BType: searchBType,
-      CType: searchCType,
-    });
-  };
+  const handleSearchSubmit = async (page = 1, pageSize) => {
+  setAppliedSearch({
+    A: searchA,
+    B: searchB,
+    C: searchC,
+    AType: searchAType,
+    BType: searchBType,
+    CType: searchCType,
+  });
+
+  setLoading(true); // start loading spinner
+
+  try {
+    const res = await axios.post(
+      `http://localhost:8000/api/testimony/combined-search/`,
+      {
+        q: searchA,
+        mode: searchAType,
+        witness_names: searchB.trim() ? [searchB.trim()] : [],     // ✅ FIXED
+        transcript_names: searchC.trim() ? [searchC.trim()] : [],  // ✅ FIXED
+      },
+      {
+        params: {
+          page,
+          page_size: pageSize,
+        },
+      }
+    );
+    
+    setQaPairs(res.data.results);
+    setTotalCount(res.data.count);
+  } catch (err) {
+    console.error("Failed to fetch paginated data:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => {
+const fetchData = async () => {
+  setLoading(true);
+  try {
+    const res = await axios.post(
+      `http://localhost:8000/api/testimony/combined-search/`,
+      {
+        q: searchA,
+        mode: searchAType,
+        witness_names: selectedWitness,
+        transcript_names: selectedTranscripts,
+        witness_types: selectedWitnessType
+      },
+      {
+        params: {
+          page: currentPage,
+          page_size: rowsPerPage,
+        },
+      }
+    );
+    setQaPairs(res.data.results);
+    setTotalCount(res.data.count);
+  } catch (err) {
+    console.error("Failed to fetch paginated data:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  if (selectedTranscripts.length > 0 || selectedWitness.length > 0 || selectedWitnessType.length > 0) {
+    fetchData();
+  }
+}, [selectedTranscripts, selectedWitness, selectedWitnessType, currentPage, rowsPerPage, searchA, searchAType]);
 
   const handleResetSearch = () => {
     setSearchA("");
@@ -129,14 +210,12 @@ const EnhancedTable = () => {
   const totalPages = Math.ceil(totalCount / rowsPerPage);
 
   return (
-    <Container fluid className="py-4 px-3">
-      <Card className="p-4 show-page-sorath">
-        <h2 className="mb-4">Testimonies</h2>
-
+    <Container fluid className=" px-3">
+      <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
         <Row className="mb-3">
           <Col md={6}>
-            <Form.Control
+            {/* <Form.Control
               type="text"
               placeholder="Search customer or phone..."
               value={search}
@@ -144,32 +223,47 @@ const EnhancedTable = () => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className='show-page-sorath'
-            />
+              className="show-page-sorath"
+            /> */}
+            <h2>Testimonies</h2>
           </Col>
           <Col md={6} className="d-flex justify-content-end">
-            <Button variant="outline-primary" size="sm" onClick={handleShowFilters} className='filter-sorath-btn'>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() => setShowSearchSection((prev) => !prev)}
+              className="filter-sorath-btn"
+            >
+              <FiSearch className="filter-sorath" />
+            </Button>
+
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={handleShowFilters}
+              className="filter-sorath-btn ms-3"
+            >
               <FiFilter className="filter-sorath" />
             </Button>
           </Col>
         </Row>
 
         {/* Conditional Search Section */}
-        
-          <Collapse in={showSearchSection}>
+
+        <Collapse in={showSearchSection}>
           <div className="p-3 bg-light rounded border mb-3">
             <Row>
               {/* Search A */}
               <Col md={4}>
-                <Form.Label>Search A (Name)</Form.Label>
+                <Form.Label>Search All Testimony</Form.Label>
                 <Form.Control
                   value={searchA}
                   onChange={(e) => setSearchA(e.target.value)}
-                  placeholder="Search by name"
+                  placeholder="Search by test"
                   className="show-page-sorath"
                 />
                 <div className="mt-2 d-flex gap-2">
-                  {["All", "Exact", "Partial"].map((opt) => (
+                  {["fuzzy", "boolean", "exact"].map((opt) => (
                     <Form.Check
                       key={opt}
                       type="radio"
@@ -185,15 +279,15 @@ const EnhancedTable = () => {
 
               {/* Search B */}
               <Col md={4}>
-                <Form.Label>Search B (Phone)</Form.Label>
+                <Form.Label>Search by Witness</Form.Label>
                 <Form.Control
                   value={searchB}
                   onChange={(e) => setSearchB(e.target.value)}
-                  placeholder="Search by phone"
+                  placeholder="Search by Witness"
                   className="show-page-sorath"
                 />
                 <div className="mt-2 d-flex gap-2">
-                  {["All", "Exact", "Partial"].map((opt) => (
+                  {["fuzzy", "boolean", "exact"].map((opt) => (
                     <Form.Check
                       key={opt}
                       type="radio"
@@ -209,15 +303,15 @@ const EnhancedTable = () => {
 
               {/* Search C */}
               <Col md={4}>
-                <Form.Label>Search C (Status)</Form.Label>
+                <Form.Label>Search by Filename</Form.Label>
                 <Form.Control
                   value={searchC}
                   onChange={(e) => setSearchC(e.target.value)}
-                  placeholder="Search by status"
-                  className="show-page-sorath" 
+                  placeholder="Search by Filename"
+                  className="show-page-sorath"
                 />
                 <div className="mt-2 d-flex gap-2">
-                  {["All", "Exact", "Partial"].map((opt) => (
+                  {["fuzzy", "boolean", "exact"].map((opt) => (
                     <Form.Check
                       key={opt}
                       type="radio"
@@ -226,7 +320,6 @@ const EnhancedTable = () => {
                       value={opt}
                       checked={searchCType === opt}
                       onChange={(e) => setSearchCType(e.target.value)}
-                      
                     />
                   ))}
                 </div>
@@ -237,13 +330,16 @@ const EnhancedTable = () => {
               <Button variant="secondary" size="sm" onClick={handleResetSearch}>
                 Reset
               </Button>
-              <Button variant="primary" size="sm" onClick={handleSearchSubmit}>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleSearchSubmit(currentPage, rowsPerPage)}
+              >
                 Apply Search
               </Button>
             </div>
           </div>
-          </Collapse>
-
+        </Collapse>
 
         {/* Table */}
         <Table responsive bordered className="align-middle rounded-3">
@@ -257,10 +353,14 @@ const EnhancedTable = () => {
             {qaPairs.map((row, idx) => (
               <tr key={idx}>
                 <td style={{ width: "100px" }}>
-                  {row.transcript_name}<br />{row.cite}
+                  {row.transcript_name}
+                  <br />
+                  {row.cite}
                 </td>
                 <td style={{ width: "100px" }}>
-                  {row.question}<br />{row.answer}
+                  {row.question}
+                  <br />
+                  {row.answer}
                 </td>
               </tr>
             ))}
@@ -272,8 +372,11 @@ const EnhancedTable = () => {
           <Col>
             <span className="text-muted small">
               {qaPairs.length > 0
-                ? `${(currentPage - 1) * rowsPerPage + 1}–${(currentPage - 1) * rowsPerPage + qaPairs.length}`
-                : '0'} of {totalCount}
+                ? `${(currentPage - 1) * rowsPerPage + 1}–${
+                    (currentPage - 1) * rowsPerPage + qaPairs.length
+                  }`
+                : "0"}{" "}
+              of {totalCount}
             </span>
           </Col>
 
@@ -284,7 +387,7 @@ const EnhancedTable = () => {
               className="custom-rows-dropdown"
               size="sm"
             >
-              {[5, 10, 15, 20, 50, 100].map(n => (
+              {[5, 10, 15, 20, 50, 100].map((n) => (
                 <Dropdown.Item
                   key={n}
                   onClick={() => handlePageSizeChange(n)}
@@ -306,7 +409,9 @@ const EnhancedTable = () => {
               >
                 Prev
               </Button>
-              <span className="fw-semibold d-flex align-center">{currentPage}</span>
+              <span className="fw-semibold d-flex align-center">
+                {currentPage}
+              </span>
               <Button
                 variant="outline-secondary"
                 size="sm"
@@ -320,7 +425,13 @@ const EnhancedTable = () => {
         </Row>
       </Card>
 
-      <Filter show={showFilters} handleClose={handleCloseFilters} />
+      <Filter
+        show={showFilters}
+        handleClose={handleCloseFilters}
+        sendTranscriptToParent={handleTranscriptFromChild}
+        sendWitnessToParent={handleWitnessFromChild}
+        sendWitnessTypeToParent={handleWitnessTypeFromChild}
+      />
     </Container>
   );
 };
