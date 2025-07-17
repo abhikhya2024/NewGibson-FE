@@ -9,7 +9,7 @@ const WitnessFilter = () => {
 
 
   const fetchWitness = async () => {
-    const res = await fetch(`${BASE_URL}/api/witness/`);
+    const res = await fetch(`http://20.163.175.235/api/witness/`);
     const data = await res.json();
     setWitnesses(data.witnesses);
   };
@@ -69,7 +69,7 @@ const TranscriptFilter = () => {
 
   const fetchTranscripts = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/transcript/`);
+      const res = await fetch(`http://20.163.175.235/api/transcript/`);
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
       setTranscripts(data.transcripts);

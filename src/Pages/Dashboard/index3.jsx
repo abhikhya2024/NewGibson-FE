@@ -112,7 +112,7 @@ const EnhancedTable = () => {
 
   try {
     const res = await axios.post(
-      `${BASE_URL}/api/testimony/combined-search/`,
+      `http://20.163.175.235/api/testimony/combined-search/`,
       {
         q: searchA,
         mode: searchAType,
@@ -142,7 +142,7 @@ const fetchData = async () => {
   setLoading(true);
   try {
     const res = await axios.post(
-      `${BASE_URL}/api/testimony/combined-search/`,
+      `http://20.163.175.235/api/testimony/combined-search/`,
       {
         q: searchA,
         mode: searchAType,

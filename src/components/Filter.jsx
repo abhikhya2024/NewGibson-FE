@@ -22,7 +22,7 @@ const Filter = ({
 
   const fetchTranscripts = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/transcript/`);
+      const res = await fetch(`${process.env.REACT_APP_PROD_API_URL}/api/transcript/`);
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
       setTranscript(data.transcripts);
@@ -33,7 +33,7 @@ const Filter = ({
 
   const fetchWitness = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/witness/`);
+      const res = await fetch(`http://20.163.175.235/api/witness/`);
       const data = await res.json();
       setWitness(data.witnesses);
     } catch (err) {
@@ -43,7 +43,7 @@ const Filter = ({
 
   const fetchWitnessType = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/witness-type/`);
+      const res = await fetch(`http://20.163.175.235/api/witness-type/`);
       const data = await res.json();
       setWitnessType(data.witnesses);
     } catch (err) {
@@ -53,7 +53,7 @@ const Filter = ({
 
   const fetchWitnessAlignment = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/witness-alignment/`);
+      const res = await fetch(`http://20.163.175.235/api/witness-alignment/`);
       const data = await res.json();
       setWitnessAlighment(data.witnesses);
     } catch (err) {
