@@ -50,7 +50,7 @@ const EnhancedTable = () => {
   const fetchPaginatedData = async (page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/testimony/`, {
+      const res = await axios.get(`${process.env.REACT_APP_PROD_API_URL}/api/testimony/`, {
         params: {
           page,
           page_size: pageSize,
