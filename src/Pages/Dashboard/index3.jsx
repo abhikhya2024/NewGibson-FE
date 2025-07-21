@@ -142,7 +142,7 @@ const fetchData = async () => {
   setLoading(true);
   try {
     const res = await axios.post(
-      `http://20.163.175.235/api/testimony/combined-search/`,
+      `https://20.163.175.235/api/testimony/combined-search/`,
       {
         q: searchA,
         mode: searchAType,
@@ -212,7 +212,6 @@ const fetchData = async () => {
 
   return (
     <Container fluid className=" px-3">
-      <h1>{BASE_URL}</h1>
       <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
         <Row className="mb-3">
