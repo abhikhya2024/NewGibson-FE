@@ -85,9 +85,9 @@ const EnhancedTable = () => {
     A: "",
     B: "",
     C: "",
-    AType: "All",
-    BType: "All",
-    CType: "All",
+    AType: "exact",
+    BType: "exact",
+    CType: "exact",
   });
 
   const handleSort = (key) => {
@@ -112,7 +112,7 @@ const EnhancedTable = () => {
 
   try {
     const res = await axios.post(
-      `http://20.163.175.235/api/testimony/combined-search/`,
+      `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
       {
         q: searchA,
         mode: searchAType,
@@ -142,7 +142,7 @@ const fetchData = async () => {
   setLoading(true);
   try {
     const res = await axios.post(
-      `https://20.163.175.235/api/testimony/combined-search/`,
+      `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
       {
         q: searchA,
         mode: searchAType,
