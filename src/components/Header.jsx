@@ -24,13 +24,13 @@ const Header = ({ isOpen, toggle }) => {
             id="profileDropdown"
           >
             <i className="bi bi-person-circle fs-5 me-1"></i>
-            <span className="d-none d-md-inline">Profile</span>
+            <span className="d-none d-md-inline">Profileee</span>
           </button>
           <ul className="dropdown-menu" aria-labelledby="profileDropdown">
             <li><a className="dropdown-item" href="#">👤 My Profile</a></li>
             <li><a className="dropdown-item" href="#">⚙️ Settings</a></li>
             <li><hr className="dropdown-divider" /></li>
-            <li><a className="dropdown-item text-danger" href="#">🚪 Logout</a></li>
+            {/* <li><a className="dropdown-item text-danger" href="#">🚪 Logout</a></li> */}
           </ul>
         </div>
       </div>

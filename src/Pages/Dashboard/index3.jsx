@@ -19,6 +19,7 @@ import BASE_URL from "../../api";
 
 const EnhancedTable = () => {
   const [selectedTranscripts, setSelectedTranscripts] = useState([]);
+  const [fuzzyTranscripts, setFuzzyTranscripts] = useState([]);
 
   const handleTranscriptFromChild = (data) => {
     setSelectedTranscripts(data);
@@ -29,6 +30,8 @@ const EnhancedTable = () => {
   const handleWitnessFromChild = (data) => {
     setSelectedWitness(data);
   };
+
+
 
   const [selectedWitnessType, setSelectedWitnessType] = useState([]);
 
@@ -50,14 +53,17 @@ const EnhancedTable = () => {
   const fetchPaginatedData = async (page = 1, pageSize = rowsPerPage) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_PROD_API_URL}/api/testimony/`, {
-        params: {
-          page,
-          page_size: pageSize,
-          // q: searchA,
-          // mode: searchAType
-        },
-      });
+      const res = await axios.get(
+        `${process.env.REACT_APP_PROD_API_URL}/api/testimony/`,
+        {
+          params: {
+            page,
+            page_size: pageSize,
+            // q: searchA,
+            // mode: searchAType
+          },
+        }
+      );
       setQaPairs(res.data.results);
       setTotalCount(res.data.count);
     } catch (err) {
@@ -77,9 +83,9 @@ const EnhancedTable = () => {
   const [searchB, setSearchB] = useState("");
   const [searchC, setSearchC] = useState("");
 
-  const [searchAType, setSearchAType] = useState("All");
-  const [searchBType, setSearchBType] = useState("All");
-  const [searchCType, setSearchCType] = useState("All");
+  const [searchAType, setSearchAType] = useState("exact");
+  const [searchBType, setSearchBType] = useState("exact");
+  const [searchCType, setSearchCType] = useState("exact");
 
   const [appliedSearch, setAppliedSearch] = useState({
     A: "",
@@ -98,95 +104,133 @@ const EnhancedTable = () => {
     setSortConfig({ key, direction });
   };
 
+  const getFuzzyTranscripts = async (query) => {
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/get-transcripts/`,
+        { transcript_name: query },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("namesss",res.data.matching_transcripts)
+      setFuzzyTranscripts(res.data.matching_transcripts)
+      console.log("transcript names", res);
+
+    } catch (err) {
+      console.error("API error:", err.response?.data || err.message);
+    }
+  };
+
+  
   const handleSearchSubmit = async (page = 1, pageSize) => {
-  setAppliedSearch({
-    A: searchA,
-    B: searchB,
-    C: searchC,
-    AType: searchAType,
-    BType: searchBType,
-    CType: searchCType,
-  });
+    setAppliedSearch({
+      A: searchA,
+      B: searchB,
+      C: searchC,
+      AType: searchAType,
+      BType: searchBType,
+      CType: searchCType,
+    });
 
-  setLoading(true); // start loading spinner
+    setLoading(true); // start loading spinner
 
-  try {
-    const res = await axios.post(
-      `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
-      {
-        q: searchA,
-        mode: searchAType,
-        witness_names: searchB.trim() ? [searchB.trim()] : [],     // ✅ FIXED
-        transcript_names: searchC.trim() ? [searchC.trim()] : [],  // ✅ FIXED
-      },
-      {
-        params: {
-          page,
-          page_size: pageSize,
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
+        {
+          q: searchA,
+          mode: searchAType,
+          witness_names: searchB.trim() ? [searchB.trim()] : [], // ✅ FIXED
+          transcript_names: searchC.trim() ? [searchC.trim()] : [], // ✅ FIXED
         },
+        {
+          params: {
+            page,
+            page_size: pageSize,
+          },
+        }
+      );
+
+      setQaPairs(res.data.results);
+      setTotalCount(res.data.count);
+    } catch (err) {
+      console.error("Failed to fetch paginated data:", err);
+    } finally {
+      setLoading(false);
+    }
+
+    getFuzzyTranscripts(searchC);
+  };
+
+  // ✅ This useEffect MUST use selectedWitness (from parent state)
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log(selectedWitness.length, "selectedWitness");
+      try {
+        const res = await axios.post(
+          `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
+          {
+            q: searchA,
+            mode: searchAType,
+            witness_names: selectedWitness, // ✅ updates correctly now
+            transcript_names: selectedTranscripts,
+            witness_types: selectedWitnessType,
+          },
+          {
+            params: {
+              page: currentPage,
+              page_size: rowsPerPage,
+            },
+          }
+        );
+        setQaPairs(res.data.results);
+        setTotalCount(res.data.count);
+      } catch (err) {
+        console.error("Failed to fetch paginated data:", err);
+      } finally {
+        setLoading(false);
       }
-    );
-    
-    setQaPairs(res.data.results);
-    setTotalCount(res.data.count);
-  } catch (err) {
-    console.error("Failed to fetch paginated data:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+    };
 
-
-useEffect(() => {
-const fetchData = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.post(
-      `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
-      {
-        q: searchA,
-        mode: searchAType,
-        witness_names: selectedWitness,
-        transcript_names: selectedTranscripts,
-        witness_types: selectedWitnessType
-      },
-      {
-        params: {
-          page: currentPage,
-          page_size: rowsPerPage,
-        },
-      }
-    );
-    setQaPairs(res.data.results);
-    setTotalCount(res.data.count);
-  } catch (err) {
-    console.error("Failed to fetch paginated data:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  if (selectedTranscripts.length > 0 || selectedWitness.length > 0 || selectedWitnessType.length > 0) {
+    // if (
+    //   selectedTranscripts.length > 0 ||
+    //   selectedWitness.length > 0 ||
+    //   selectedWitnessType.length > 0
+    // ) {
     fetchData();
-  }
-}, [selectedTranscripts, selectedWitness, selectedWitnessType, currentPage, rowsPerPage, searchA, searchAType]);
+    // }
+    // else{
+    //   print("length==0")
+    // }
+  }, [
+    selectedTranscripts,
+    selectedWitness, // ✅ updates on deselect too
+    selectedWitnessType,
+    currentPage,
+    rowsPerPage,
+    searchA,
+    searchAType,
+  ]);
 
   const handleResetSearch = () => {
     setSearchA("");
     setSearchB("");
     setSearchC("");
-    setSearchAType("All");
-    setSearchBType("All");
-    setSearchCType("All");
+    setSearchAType("exact");
+    setSearchBType("exact");
+    setSearchCType("exact");
     setAppliedSearch({
       A: "",
       B: "",
       C: "",
-      AType: "All",
-      BType: "All",
-      CType: "All",
+      AType: "exact",
+      BType: "exact",
+      CType: "exact",
     });
+    fetchPaginatedData();
   };
 
   const matchType = (text, query, type) => {
@@ -214,6 +258,8 @@ const fetchData = async () => {
     <Container fluid className=" px-3">
       <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
+        {console.log("tscp[t", fuzzyTranscripts)}
+        
         <Row className="mb-3">
           <Col md={6}>
             {/* <Form.Control
@@ -227,6 +273,7 @@ const fetchData = async () => {
               className="show-page-sorath"
             /> */}
             <h2>Testimonies</h2>
+            {selectedWitness}
           </Col>
           <Col md={6} className="d-flex justify-content-end">
             <Button
@@ -254,6 +301,52 @@ const fetchData = async () => {
         <Collapse in={showSearchSection}>
           <div className="p-3 bg-light rounded border mb-3">
             <Row>
+                            {/* Search C */}
+              <Col md={4}>
+                <Form.Label>Search by Filename</Form.Label>
+                <Form.Control
+                  value={searchC}
+                  onChange={(e) => setSearchC(e.target.value)}
+                  placeholder="Search by Filename"
+                  className="show-page-sorath"
+                />
+                <div className="mt-2 d-flex gap-2">
+                  {["fuzzy", "boolean", "exact"].map((opt) => (
+                    <Form.Check
+                      key={opt}
+                      type="radio"
+                      name="searchCType"
+                      label={opt}
+                      value={opt}
+                      checked={searchCType === opt}
+                      onChange={(e) => setSearchCType(e.target.value)}
+                    />
+                  ))}
+                </div>
+              </Col>
+               {/* Search B */}
+              <Col md={4}>
+                <Form.Label>Search by Witness</Form.Label>
+                <Form.Control
+                  value={searchB}
+                  onChange={(e) => setSearchB(e.target.value)}
+                  placeholder="Search by Witness"
+                  className="show-page-sorath"
+                />
+                <div className="mt-2 d-flex gap-2">
+                  {["fuzzy", "boolean", "exact"].map((opt) => (
+                    <Form.Check
+                      key={opt}
+                      type="radio"
+                      name="searchBType"
+                      label={opt}
+                      value={opt}
+                      checked={searchBType === opt}
+                      onChange={(e) => setSearchBType(e.target.value)}
+                    />
+                  ))}
+                </div>
+              </Col>
               {/* Search A */}
               <Col md={4}>
                 <Form.Label>Search All Testimony</Form.Label>
@@ -278,53 +371,9 @@ const fetchData = async () => {
                 </div>
               </Col>
 
-              {/* Search B */}
-              <Col md={4}>
-                <Form.Label>Search by Witness</Form.Label>
-                <Form.Control
-                  value={searchB}
-                  onChange={(e) => setSearchB(e.target.value)}
-                  placeholder="Search by Witness"
-                  className="show-page-sorath"
-                />
-                <div className="mt-2 d-flex gap-2">
-                  {["fuzzy", "boolean", "exact"].map((opt) => (
-                    <Form.Check
-                      key={opt}
-                      type="radio"
-                      name="searchBType"
-                      label={opt}
-                      value={opt}
-                      checked={searchBType === opt}
-                      onChange={(e) => setSearchBType(e.target.value)}
-                    />
-                  ))}
-                </div>
-              </Col>
+             
 
-              {/* Search C */}
-              <Col md={4}>
-                <Form.Label>Search by Filename</Form.Label>
-                <Form.Control
-                  value={searchC}
-                  onChange={(e) => setSearchC(e.target.value)}
-                  placeholder="Search by Filename"
-                  className="show-page-sorath"
-                />
-                <div className="mt-2 d-flex gap-2">
-                  {["fuzzy", "boolean", "exact"].map((opt) => (
-                    <Form.Check
-                      key={opt}
-                      type="radio"
-                      name="searchCType"
-                      label={opt}
-                      value={opt}
-                      checked={searchCType === opt}
-                      onChange={(e) => setSearchCType(e.target.value)}
-                    />
-                  ))}
-                </div>
-              </Col>
+
             </Row>
 
             <div className="mt-3 d-flex justify-content-end gap-2">
@@ -347,6 +396,7 @@ const fetchData = async () => {
           <thead className="table-sorath-three">
             <tr>
               <th style={{ width: "100px" }}>Filename and Cite</th>
+              <th style={{ width: "10%" }}>Comments</th> {/* Reduced width */}
               <th style={{ width: "100px" }}>Question and Answers</th>
             </tr>
           </thead>
@@ -357,6 +407,16 @@ const fetchData = async () => {
                   {row.transcript_name}
                   <br />
                   {row.cite}
+                </td>
+                <td
+                  style={{
+                    width: "10%", // Reduced width
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {/* You can put something like an icon or tooltip here later */}
                 </td>
                 <td style={{ width: "100px" }}>
                   {row.question}
@@ -432,6 +492,8 @@ const fetchData = async () => {
         sendTranscriptToParent={handleTranscriptFromChild}
         sendWitnessToParent={handleWitnessFromChild}
         sendWitnessTypeToParent={handleWitnessTypeFromChild}
+        totalCount={totalCount}
+        fuzzyTranscripts={fuzzyTranscripts}
       />
     </Container>
   );

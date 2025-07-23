@@ -9,7 +9,8 @@ const Filter = ({
   sendTranscriptToParent,
   sendWitnessToParent,
   sendWitnessTypeToParent,
-  totalCount
+  totalCount,
+  fuzzyTranscripts
 }) => {
   const [transcript, setTranscript] = useState([]);
   const [witness, setWitness] = useState([]);
@@ -22,7 +23,9 @@ const Filter = ({
 
   const fetchTranscripts = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_PROD_API_URL}/api/transcript/`);
+      const res = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/`
+      );
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const data = await res.json();
       setTranscript(data.transcripts);
@@ -33,7 +36,9 @@ const Filter = ({
 
   const fetchWitness = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_PROD_API_URL}/api/witness/`);
+      const res = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/witness/`
+      );
       const data = await res.json();
       setWitness(data.witnesses);
     } catch (err) {
@@ -43,7 +48,9 @@ const Filter = ({
 
   const fetchWitnessType = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_PROD_API_URL}/api/witness-type/`);
+      const res = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/witness-type/`
+      );
       const data = await res.json();
       setWitnessType(data.witnesses);
     } catch (err) {
@@ -53,13 +60,17 @@ const Filter = ({
 
   const fetchWitnessAlignment = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_PROD_API_URL}/api/witness-alignment/`);
+      const res = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/witness-alignment/`
+      );
       const data = await res.json();
       setWitnessAlighment(data.witnesses);
     } catch (err) {
       console.error(err.message);
     }
   };
+
+
   useEffect(() => {
     fetchTranscripts();
     fetchWitness();
@@ -67,14 +78,15 @@ const Filter = ({
     fetchWitnessAlignment();
   }, []);
 
+
+
+
   // Deduplicate by name
   const uniqueTranscripts = Array.from(
     new Map(transcript.map((item) => [item.name, item])).values()
   );
   const uniqueWitnesses = Array.from(
-    new Map(
-      witness.map((item) => [`${item.first_name} ${item.last_name}`, item])
-    ).values()
+    new Map(witness.map((item) => [item.fullname, item])).values()
   );
 
   // Send to parent on change
@@ -84,11 +96,16 @@ const Filter = ({
     }
   }, [selectedTranscripts]);
 
-  useEffect(() => {
-    if (typeof sendWitnessToParent === "function") {
-      sendWitnessToParent(selectedWitnesses);
-    }
-  }, [selectedWitnesses]);
+  
+useEffect(() => {
+  setSelectedTranscripts(fuzzyTranscripts);
+}, [fuzzyTranscripts]);
+
+useEffect(() => {
+  if (typeof sendWitnessToParent === "function") {
+    sendWitnessToParent(selectedWitnesses); // ✅ Will run on every change
+  }
+}, [selectedWitnesses]);
 
   useEffect(() => {
     if (typeof sendWitnessTypeToParent === "function") {
@@ -105,14 +122,16 @@ const Filter = ({
   };
 
   // Store only witness full names (string)
-  const handleWitnessCheck = (option) => {
-    const fullName = `${option.first_name} ${option.last_name}`;
-    setSelectedWitnesses((prev) =>
-      prev.includes(fullName)
-        ? prev.filter((name) => name !== fullName)
-        : [...prev, fullName]
-    );
-  };
+const handleWitnessCheck = (option) => {
+  const fullName = option.fullname;
+  setSelectedWitnesses((prev) => {
+    const updated = prev.includes(fullName)
+      ? prev.filter((name) => name !== fullName)
+      : [...prev, fullName];
+
+    return updated;
+  });
+};
 
   const handleAlignmentChange = (alignment) => {
     setSelectedAlignments((prev) =>
@@ -142,37 +161,38 @@ const Filter = ({
           {/* Transcript Filter */}
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">Transcript</Form.Label>
-            <Dropdown className="w-100">
-              <Dropdown.Toggle
-                variant="light"
-                className="w-100 text-start border rounded-2"
-              >
-                {selectedTranscripts.length > 0 ? (
-                  <div className="d-flex flex-wrap gap-1">
-                    {selectedTranscripts.map((name, idx) => (
-                      <span key={idx} className="badge bg-primary">
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  "Select transcript(s)"
-                )}
-              </Dropdown.Toggle>
-              <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
-                {uniqueTranscripts.map((option) => (
-                  <Form.Check
-                    key={option.id}
-                    type="checkbox"
-                    label={option.name}
-                    className="px-3 py-1"
-                    style={{ whiteSpace: "nowrap" }}
-                    checked={selectedTranscripts.includes(option.name)}
-                    onChange={() => handleTranscriptCheck(option)}
-                  />
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>
+<Dropdown className="w-100">
+  <Dropdown.Toggle
+    variant="light"
+    className="w-100 text-start border rounded-2"
+  >
+    {selectedTranscripts.length > 0 ? (
+      <div className="d-flex flex-wrap gap-1">
+        {selectedTranscripts.map((name, idx) => (
+          <span key={idx} className="badge bg-primary">
+            {name}
+          </span>
+        ))}
+      </div>
+    ) : (
+      "Select transcript(s)"
+    )}
+  </Dropdown.Toggle>
+
+  <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
+    {uniqueTranscripts.map((option) => (
+      <Form.Check
+        key={option.id}
+        type="checkbox"
+        label={option.name}
+        className="px-3 py-1"
+        style={{ whiteSpace: "nowrap" }}
+        checked={selectedTranscripts.includes(option.name)}
+        onChange={() => handleTranscriptCheck(option)}
+      />
+    ))}
+  </Dropdown.Menu>
+</Dropdown>
           </Form.Group>
 
           {/* Witness Filter */}
@@ -195,20 +215,18 @@ const Filter = ({
                   "Select witness(es)"
                 )}
               </Dropdown.Toggle>
+
               <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
-                {uniqueWitnesses.map((option) => {
-                  const fullName = `${option.first_name} ${option.last_name}`;
-                  return (
-                    <Form.Check
-                      key={option.id}
-                      type="checkbox"
-                      label={fullName}
-                      className="px-3 py-1"
-                      checked={selectedWitnesses.includes(fullName)}
-                      onChange={() => handleWitnessCheck(option)}
-                    />
-                  );
-                })}
+                {uniqueWitnesses.map((option) => (
+                  <Form.Check
+                    key={option.id}
+                    type="checkbox"
+                    label={option.fullname}
+                    className="px-3 py-1"
+                    checked={selectedWitnesses.includes(option.fullname)}
+                    onChange={() => handleWitnessCheck(option)}
+                  />
+                ))}
               </Dropdown.Menu>
             </Dropdown>
           </Form.Group>
@@ -249,8 +267,8 @@ const Filter = ({
 
           {/* Testimony Count */}
           <div className="bg-primary text-white text-center py-3 px-2 rounded-3">
-            <h6 className="mb-1">Testimony Count</h6>
-            <h2 className="fw-bold mb-0">{totalCount}</h2>
+            <h5 className="mb-1 fw-bold">Testimony Count</h5>
+            <h5 className=" mb-0">{totalCount}</h5>
           </div>
 
           {/* Apply & Reset */}

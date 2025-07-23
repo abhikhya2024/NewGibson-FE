@@ -49,7 +49,7 @@ useEffect(() => {
         <li className={`btn-style2 px-3 ${location.pathname === '/dashboard' ? 'active' : ''}`}>
           <Link
             className="text-decoration-none d-flex align-items-center"
-            to="/dashboard"
+            to="/testimony"
             data-bs-toggle="tooltip"
             data-bs-placement="right"
             title="Dashboard"
