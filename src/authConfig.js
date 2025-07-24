@@ -27,7 +27,6 @@ export const msalConfig = {
     storeAuthStateInCookie: true,  // 👈 Needed for IE/Edge legacy support
   }
 };
-
 export const loginRequest = {
   scopes: ["User.Read"], // Or other scopes you configured
 };
