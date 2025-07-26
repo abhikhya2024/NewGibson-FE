@@ -9,8 +9,11 @@ const Filter = ({
   sendTranscriptToParent,
   sendWitnessToParent,
   sendWitnessTypeToParent,
-  totalCount,
-  fuzzyTranscripts
+  testimonyCnt,
+  fuzzyTranscripts,
+  fuzzyWitnesses,
+  sendSearchCToParent,
+  sendSearchBToParent
 }) => {
   const [transcript, setTranscript] = useState([]);
   const [witness, setWitness] = useState([]);
@@ -106,7 +109,9 @@ useEffect(() => {
     sendWitnessToParent(selectedWitnesses); // ✅ Will run on every change
   }
 }, [selectedWitnesses]);
-
+useEffect(() => {
+  setSelectedWitnesses(fuzzyWitnesses);
+}, [fuzzyWitnesses]);
   useEffect(() => {
     if (typeof sendWitnessTypeToParent === "function") {
       sendWitnessTypeToParent(selectedWitnessTypes);
@@ -119,6 +124,7 @@ useEffect(() => {
         ? prev.filter((name) => name !== option.name)
         : [...prev, option.name]
     );
+    sendSearchCToParent("")
   };
 
   // Store only witness full names (string)
@@ -131,7 +137,10 @@ const handleWitnessCheck = (option) => {
 
     return updated;
   });
+  sendSearchBToParent("")
+
 };
+
 
   const handleAlignmentChange = (alignment) => {
     setSelectedAlignments((prev) =>
@@ -268,16 +277,16 @@ const handleWitnessCheck = (option) => {
           {/* Testimony Count */}
           <div className="bg-primary text-white text-center py-3 px-2 rounded-3">
             <h5 className="mb-1 fw-bold">Testimony Count</h5>
-            <h5 className=" mb-0">{totalCount}</h5>
+            <h5 className=" mb-0">{testimonyCnt}</h5>
           </div>
 
           {/* Apply & Reset */}
           <div className="d-flex justify-content-between mt-4">
+            {/* <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button> */}
             <Button variant="secondary" onClick={handleClose}>
               Close
-            </Button>
-            <Button variant="primary" onClick={handleClose}>
-              Apply Filters
             </Button>
           </div>
         </div>

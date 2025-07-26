@@ -55,7 +55,7 @@ useEffect(() => {
             title="Dashboard"
           >
             <i className="bi bi-house"></i>
-            <span className="menu-text ms-3">Seatch All Testimony</span>
+            <span className="menu-text ms-3">Search All Testimony</span>
           </Link>
         </li>
         <li className={`btn-style2 px-3 ${location.pathname === '/dashboard2' ? 'active2' : ''}`}>

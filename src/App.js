@@ -54,14 +54,14 @@ function App() {
         <Route
           path="/testimony"
           element={
-            <PrivateRoute>
+            // <PrivateRoute>
               <Layout3>
                 <Dashboard3 />
               </Layout3>
-            </PrivateRoute>
+            // </PrivateRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/testimony" replace />} />
       </Routes>
     </BrowserRouter>
   );
