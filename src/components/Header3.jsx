@@ -3,9 +3,14 @@ import { useMsal } from "@azure/msal-react";
 const Header = ({ isOpen, toggle }) => {
   const { accounts } = useMsal();
 
+  const account = accounts[0];
+
+  const email = account?.idTokenClaims?.preferred_username; // or .email depending on your tenant setup
+  const msalId = account?.idTokenClaims?.oid; // Object ID (unique identifier)
+
   const name = accounts[0]?.idTokenClaims?.name; // Display Name
-  const upn = accounts[0]?.idTokenClaims?.preferred_username;
-  const initials = getInitials(name);
+  // const upn = accounts[0]?.idTokenClaims?.preferred_username;
+  // const initials = getInitials(name);
 
   const { instance } = useMsal();
   const handleLogout = () => {
@@ -14,16 +19,18 @@ const Header = ({ isOpen, toggle }) => {
     });
   };
 
-function getInitials(name) {
-  if (!name) return "";
+  function getInitials(name) {
+    if (!name) return "";
+
+    const words = name.trim().split(/\s+/); // Split by any amount of whitespace
+
+    const firstInitial = words[0]?.[0] || "";
+    const secondInitial = words[1]?.[0] || "";
+
+    return (firstInitial + secondInitial).toUpperCase();
+  }
+
   
-  const words = name.trim().split(/\s+/); // Split by any amount of whitespace
-
-  const firstInitial = words[0]?.[0] || "";
-  const secondInitial = words[1]?.[0] || "";
-
-  return (firstInitial + secondInitial).toUpperCase();
-}
   return (
     <nav className="navbar navbar-light bg-light shadow-sm px-3 d-flex justify-content-between align-items-center">
       {/* Left: Toggle Button */}
@@ -66,7 +73,7 @@ function getInitials(name) {
               }}
               title={name}
             >
-              {getInitials(name)}
+              {getInitials(name)}  {console.log(msalId)}
             </div>
             {/* <span className="d-none d-md-inline">Profile</span> */}
           </button>

@@ -6,14 +6,17 @@ import reportWebVitals from "./reportWebVitals";
 import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "./authConfig";
 import { PublicClientApplication } from "@azure/msal-browser";
+import { SearchProvider } from "./contexts/SearchContext"; // <-- adjust path as needed
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-<React.StrictMode>
+  <React.StrictMode>
     <MsalProvider instance={msalInstance}>
-      <App />
+      <SearchProvider>
+        <App />
+      </SearchProvider>
     </MsalProvider>
   </React.StrictMode>
 );

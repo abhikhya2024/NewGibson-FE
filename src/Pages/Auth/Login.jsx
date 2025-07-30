@@ -4,20 +4,54 @@ import { useNavigate } from "react-router-dom";
 import { FaGoogle, FaFacebookF, FaApple, FaEnvelope, FaLock } from 'react-icons/fa';
 import "../../assets/css/loginpage.css"
 import { TiVendorMicrosoft } from "react-icons/ti";
-
+import axios from "axios";
+import { useMsalUser } from "../../msal";
 const Login = () => {
+  
   const { instance } = useMsal();
+  // const email = account?.idTokenClaims?.preferred_username; // or .email depending on your tenant setup
+  // const msal_id = account?.idTokenClaims?.oid; // Object ID (unique identifier)
+  // const name = accounts[0]?.idTokenClaims?.name; // Display Name
+
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    instance.loginPopup(loginRequest).then((response) => {
-      console.log("✅ Login Success", response);
-      navigate("/testimony");
-    }).catch(error => {
-      console.error("❌ Login Failed", error);
-    });
-  };
+const handleLogin = async () => {
+  try {
+    const response = await instance.loginPopup(loginRequest);
+    console.log("✅ Login Success", response);
 
+    const account = response.account;
+    const email = account.idTokenClaims?.preferred_username || account.username;
+    const msal_id = account.idTokenClaims?.oid;
+    const name = account.idTokenClaims?.name;
+
+    await createUser(email, msal_id, name);
+
+    navigate("/testimony");
+  } catch (error) {
+    console.error("❌ Login Failed", error);
+  }
+};
+
+    const createUser = async (email, msal_id, name) => {
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_PROD_API_URL}/api/users/create-user/`,
+        { email: email,
+          msal_id: msal_id,
+          name: name
+         },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("usersssss", res)
+    } catch (err) {
+      console.error("API error:", err.response?.data || err.message);
+    }
+  };
   return (
     // <div>
     //   <h2>Login</h2>

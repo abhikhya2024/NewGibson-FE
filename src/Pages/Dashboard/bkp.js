@@ -18,28 +18,8 @@ import Filter from "../../components/Filter";
 import BASE_URL from "../../api";
 import { FaCommentAlt } from "react-icons/fa";
 import Comments from "../../components/Comments";
-import { useSearchContext } from "../../contexts/SearchContext";
-const TestimonySearchPage = () => {
-    const {
-    searchA,
-    searchB,
-    searchC,
-    searchAType,
-    searchBType,
-    searchCType,
-    setSearchA,
-    setSearchB,
-    setSearchC,
-    setSearchAType,
-    setSearchBType,
-    setSearchCType,
-    selectedWitness,
-    selectedTranscripts,
-    selectedWitnessType,
-    fuzzyTranscripts, fuzzyWitnesses,
-    setFuzzyTranscripts,
-    setFuzzyWitnesses
-  } = useSearchContext();
+
+const EnhancedTable = () => {
   const [offset, setOffset] = useState(0);
   const rowsPerPage = 100;
   const [limit] = useState(100); // batch size
@@ -47,9 +27,9 @@ const TestimonySearchPage = () => {
   const loaderRef = useRef(null); // sentinel for intersection observer
 
   const [testimonyId, setTestimonyId] = useState();
-  // const [selectedTranscripts, setSelectedTranscripts] = useState([]);
-  // const [fuzzyTranscripts, setFuzzyTranscripts] = useState([]);
-  // const [fuzzyWitnesses, setFuzzyWitnesses] = useState([]);
+  const [selectedTranscripts, setSelectedTranscripts] = useState([]);
+  const [fuzzyTranscripts, setFuzzyTranscripts] = useState([]);
+  const [fuzzyWitnesses, setFuzzyWitnesses] = useState([]);
 
   const handleTranscriptFromChild = (data) => {
     setSelectedTranscripts(data);
@@ -62,13 +42,13 @@ const TestimonySearchPage = () => {
   const handleSearchBFromChild = (data) => {
     setSearchB(data);
   };
-  // const [selectedWitness, setSelectedWitness] = useState([]);
+  const [selectedWitness, setSelectedWitness] = useState([]);
 
   const handleWitnessFromChild = (data) => {
     setSelectedWitness(data);
   };
 
-  // const [selectedWitnessType, setSelectedWitnessType] = useState([]);
+  const [selectedWitnessType, setSelectedWitnessType] = useState([]);
 
   const handleWitnessTypeFromChild = (data) => {
     setSelectedWitnessType(data);
@@ -83,10 +63,8 @@ const TestimonySearchPage = () => {
   const [showComments, setShowComments] = useState(false);
   const [filenameCnt, setFilenameCnt] = useState(0);
   const [witnessNameCnt, setWitnessNameCnt] = useState(0);
-
-  const [initialTestimonyCnt, setInitialTestimonyCnt] = useState()
   const [testimonyCnt, setTestimonyCnt] = useState(0);
-  const [showInitialTestimonyCnt, setShowInitialTestimonyCnt] = useState(true)
+
   const handleShowFilters = () => setShowFilters(true);
   const handleCloseFilters = () => setShowFilters(false);
   const handleShowComments = (id) => {
@@ -131,8 +109,7 @@ const TestimonySearchPage = () => {
         setHasMore(false);
       } else {
         setQaPairs((prev) => [...prev, ...res.data.results]);
-        setInitialTestimonyCnt(res.data.total)
-        setShowInitialTestimonyCnt(true)
+        setTestimonyCnt(res.data.total)
       }
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -147,34 +124,34 @@ const TestimonySearchPage = () => {
   }, [offset]);
 
   const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } =
-        scrollContainerRef.current;
-      if (scrollTop + clientHeight >= scrollHeight - 10 && hasMore && !loading) {
-        setOffset((prev) => prev + rowsPerPage);
-      }
-    };
-    // useEffect(() => {
-    //   fetchPaginatedData(currentPage, rowsPerPage);
-    // }, [currentPage, rowsPerPage]);
-  
-    const [showSearchSection, setShowSearchSection] = useState(false);
-  
-    // const [searchA, setSearchA] = useState("");
-    // const [searchB, setSearchB] = useState("");
-    // const [searchC, setSearchC] = useState("");
-  
-    // const [searchAType, setSearchAType] = useState("exact");
-    // const [searchBType, setSearchBType] = useState("exact");
-    // const [searchCType, setSearchCType] = useState("exact");
-  
-    const [appliedSearch, setAppliedSearch] = useState({
-      A: "",
-      B: "",
-      C: "",
-      AType: "exact",
-      BType: "exact",
-      CType: "exact",
-    });
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    if (scrollTop + clientHeight >= scrollHeight - 10 && hasMore && !loading) {
+      setOffset((prev) => prev + rowsPerPage);
+    }
+  };
+  // useEffect(() => {
+  //   fetchPaginatedData(currentPage, rowsPerPage);
+  // }, [currentPage, rowsPerPage]);
+
+  const [showSearchSection, setShowSearchSection] = useState(false);
+
+  const [searchA, setSearchA] = useState("");
+  const [searchB, setSearchB] = useState("");
+  const [searchC, setSearchC] = useState("");
+
+  const [searchAType, setSearchAType] = useState("exact");
+  const [searchBType, setSearchBType] = useState("exact");
+  const [searchCType, setSearchCType] = useState("exact");
+
+  const [appliedSearch, setAppliedSearch] = useState({
+    A: "",
+    B: "",
+    C: "",
+    AType: "exact",
+    BType: "exact",
+    CType: "exact",
+  });
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -260,7 +237,6 @@ const TestimonySearchPage = () => {
 
       const uniqueCount = uniqueFilenames.size;
       setTotalCount(res.data.count);
-      setTestimonyCnt(res.data.count)
       // Witness name count
       const uniqueWitnessNames = new Set(
         res.data.results.map((item) => item.witness_name.trim().toLowerCase())
@@ -280,7 +256,7 @@ const TestimonySearchPage = () => {
     getFuzzyWitnesses(searchB);
   };
 
-    const highlightText = (text, keyword) => {
+  const highlightText = (text, keyword) => {
     if (!keyword) return text;
 
     const regex = new RegExp(`(${keyword})`, "gi");
@@ -299,12 +275,31 @@ const TestimonySearchPage = () => {
       )
     );
   };
+  // ✅ This useEffect MUST use selectedWitness (from parent state)
+useEffect(() => {
+  const timeout = setTimeout(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false; // ✅ skip first run
+    } else {
+      fetchData(); // ✅ only run on subsequent changes
+    }
+  }, 0);
 
-  const didMountRef = useRef(false);
+  return () => clearTimeout(timeout); // cleanup
+}, [
+  searchA,
+  searchB,
+  searchC,
+  searchAType,
+  searchBType,
+  searchCType,
+  selectedWitness,
+  selectedTranscripts,
+  selectedWitnessType,
+]);
 
   const fetchData = async () => {
-    setLoading(true);
-
+    console.log(selectedWitness.length, "selectedWitness");
     try {
       const res = await axios.post(
         `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
@@ -315,7 +310,7 @@ const TestimonySearchPage = () => {
           mode2: searchBType,
           q3: searchC,
           mode3: searchCType,
-          witness_names: selectedWitness,
+          witness_names: selectedWitness, // ✅ updates correctly now
           transcript_names: selectedTranscripts,
           witness_types: selectedWitnessType,
         },
@@ -326,57 +321,56 @@ const TestimonySearchPage = () => {
           },
         }
       );
-
-      const results = res.data.results;
-
+      //Filename cnt
       const uniqueFilenames = new Set(
-        results.map((item) => item.transcript_name.trim().toLowerCase())
+        res.data.results.map((item) =>
+          item.transcript_name.trim().toLowerCase()
+        )
       );
-      setFilenameCnt(uniqueFilenames.size);
+      const uniqueCount = uniqueFilenames.size;
+      setFilenameCnt(uniqueCount);
 
+      //Witness cnt
       const uniqueWitnessNames = new Set(
-        results.map((item) => item.witness_name.trim().toLowerCase())
+        res.data.results.map((item) => item.witness_name.trim().toLowerCase())
       );
-      setWitnessNameCnt(uniqueWitnessNames.size);
+      const uniqueWitnessCount = uniqueWitnessNames.size;
+      setWitnessNameCnt(uniqueWitnessCount);
 
-      setQaPairs(results);
       setTotalCount(res.data.count);
-      setShowInitialTestimonyCnt(false)
-      setTestimonyCnt(res.data.count)
-
+      setQaPairs(res.data.results);
+      setTotalCount(res.data.count);
     } catch (err) {
-      console.error("❌ Failed to fetch paginated data:", err);
+      console.error("Failed to fetch paginated data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Run only on search/filter changes — skip on first mount
-  const isFirstRun = useRef(true);
+//   const isFirstRender = useRef(true);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isFirstRun.current) {
-        isFirstRun.current = false; // ✅ skip first run
-      } else {
-        fetchData(); // ✅ only run on subsequent changes
-      }
-    }, 0);
+// useEffect(() => {
+//   if (isFirstRender.current) {
+//     isFirstRender.current = false;
+//     return; // ⛔ Skip on first page load
+//   }
 
-    return () => clearTimeout(timeout); // cleanup
-  }, [
-    searchA,
-    searchB,
-    searchC,
-    searchAType,
-    searchBType,
-    searchCType,
-    selectedWitness,
-    selectedTranscripts,
-    selectedWitnessType,
-  ]);
-
-    const handleResetSearch = () => {
+//   fetchData(); // ✅ Trigger only on changes
+// }, [
+//   searchA,
+//   searchB,
+//   searchC,
+//   searchAType,
+//   searchBType,
+//   searchCType,
+//   selectedWitness,
+//   selectedTranscripts,
+//   selectedWitnessType,
+// ]);
+  // useEffect(() => {
+  //   // handleSearchSubmit();
+  // }, [searchC, searchB]);
+  const handleResetSearch = () => {
     setSearchA("");
     setSearchB("");
     setSearchC("");
@@ -408,42 +402,49 @@ const TestimonySearchPage = () => {
     }
   };
 
-  // useEffect(() => {
-  //     if (filenameCnt == 0 && witnessNameCnt == 0) {
-  //       setTestimonyCnt(0);
-  //     } else {
-  //       fetchPaginatedData(offset);
-  //     }
-  //   }, [filenameCnt, witnessNameCnt]);
-  
-    const getColorFromString = (str) => {
-      const colors = [
-        "#6c63ff",
-        "#ff6b6b",
-        "#1abc9c",
-        "#e67e22",
-        "#f39c12",
-        "#3498db",
-        "#9b59b6",
-        "#2ecc71",
-        "#e84393",
-        "#fd79a8",
-      ];
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return colors[Math.abs(hash) % colors.length];
-    };
+  useEffect(() => {
+    if (filenameCnt == 0 && witnessNameCnt == 0) {
+      setTestimonyCnt(0);
+    } else {
+      fetchPaginatedData(offset);
+    }
+  }, [filenameCnt, witnessNameCnt]);
+
+  const getColorFromString = (str) => {
+    const colors = [
+      "#6c63ff",
+      "#ff6b6b",
+      "#1abc9c",
+      "#e67e22",
+      "#f39c12",
+      "#3498db",
+      "#9b59b6",
+      "#2ecc71",
+      "#e84393",
+      "#fd79a8",
+    ];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  // const handlePageSizeChange = (size) => {
+  //   setRowsPerPage(size);
+  //   setCurrentPage(1); // reset to first page
+  // };
+
+  // const totalPages = Math.ceil(totalCount / rowsPerPage);
+
   return (
-      <Container fluid className=" px-3">
+    <Container fluid className=" px-3">
       <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
 
         <Row className="mb-3">
           <Col md={6}>
             <h2>Testimonies</h2>
-            {console.log("showInitialTestimonyCnt", showInitialTestimonyCnt)}
           </Col>
           <Col md={6} className="d-flex justify-content-end">
             <Button
@@ -590,7 +591,7 @@ const TestimonySearchPage = () => {
                         fontWeight: "bold", // Optional: makes number more prominent
                       }}
                     >
-                      {showInitialTestimonyCnt ? initialTestimonyCnt: testimonyCnt}
+                      {testimonyCnt}
                     </div>
                   </Col>
                   <Col>
@@ -758,15 +759,27 @@ const TestimonySearchPage = () => {
           </Col> */}
         </Row>
       </Card>
-            <Filter
+
+      <Filter
         show={showFilters}
         handleClose={handleCloseFilters}
+        sendTranscriptToParent={handleTranscriptFromChild}
+        sendWitnessToParent={handleWitnessFromChild}
+        sendWitnessTypeToParent={handleWitnessTypeFromChild}
         testimonyCnt={testimonyCnt}
-        // fuzzyTranscripts={fuzzyTranscripts}
-        // fuzzyWitnesses={fuzzyWitnesses}
+        fuzzyTranscripts={fuzzyTranscripts}
+        fuzzyWitnesses={fuzzyWitnesses}
+        sendSearchCToParent={handleSearchCFromChild}
+        sendSearchBToParent={handleSearchBFromChild}
       />
-      </Container>
+
+      <Comments
+        showComments={showComments}
+        handleClose={handleCloseComments}
+        testimonyId={testimonyId}
+      />
+    </Container>
   );
 };
 
-export default TestimonySearchPage;
+export default EnhancedTable;
