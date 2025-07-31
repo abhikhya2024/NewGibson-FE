@@ -442,8 +442,8 @@ const TestimonySearchPage = () => {
 
         <Row className="mb-3">
           <Col md={6}>
-            <h2>Testimonies</h2>
-            {console.log("showInitialTestimonyCnt", showInitialTestimonyCnt)}
+            <h2>Testimoniessss</h2>
+{selectedWitness}
           </Col>
           <Col md={6} className="d-flex justify-content-end">
             <Button

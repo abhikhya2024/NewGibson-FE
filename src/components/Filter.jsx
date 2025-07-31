@@ -37,7 +37,7 @@ const didInit = useRef(false);
   const [witnessType, setWitnessType] = useState([]);
   const [witnessAlignment, setWitnessAlignment] = useState([]);
   // const [selectedTranscripts, setSelectedTranscripts] = useState([]);
-  const [selectedWitnesses, setSelectedWitnesses] = useState([]);
+  // const [selectedWitnesses, setSelectedWitnesses] = useState([]);
   const [selectedAlignments, setSelectedAlignments] = useState([]);
   const [selectedWitnessTypes, setSelectedWitnessTypes] = useState([]);
 
@@ -128,8 +128,9 @@ const didInit = useRef(false);
   };
 
   const handleWitnessCheck = (option) => {
+
     const fullName = option.fullname;
-    setSelectedWitnesses((prev) =>
+    setSelectedWitness((prev) =>
       prev.includes(fullName)
         ? prev.filter((name) => name !== fullName)
         : [...prev, fullName]
@@ -206,9 +207,9 @@ const didInit = useRef(false);
                 variant="light"
                 className="w-100 text-start border rounded-2"
               >
-                {selectedWitnesses.length > 0 ? (
+                {selectedWitness.length > 0 ? (
                   <div className="d-flex flex-wrap gap-1">
-                    {selectedWitnesses.map((name, idx) => (
+                    {selectedWitness.map((name, idx) => (
                       <span key={idx} className="badge bg-success">
                         {name}
                       </span>
@@ -225,7 +226,7 @@ const didInit = useRef(false);
                     type="checkbox"
                     label={option.fullname}
                     className="px-3 py-1"
-                    checked={selectedWitnesses.includes(option.fullname)}
+                    checked={selectedWitness.includes(option.fullname)}
                     onChange={() => handleWitnessCheck(option)}
                   />
                 ))}
