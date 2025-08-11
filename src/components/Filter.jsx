@@ -24,13 +24,14 @@ const Filter = ({
     setSelectedWitnessType,
     fuzzyTranscripts,
     setFuzzyTranscripts,
-    // fuzzyWitnesses,
-    // setFuzzyWitnesses,
+    fuzzyWitnesses,
+    setFuzzyWitnesses,
   } = useSearchContext();
   const didMountTranscript = useRef(false);
   const didMountWitness = useRef(false);
   const didMountType = useRef(false);
-const didInit = useRef(false);
+
+  const didInit = useRef(false);
 
   const [transcript, setTranscript] = useState([]);
   const [witness, setWitness] = useState([]);
@@ -40,6 +41,10 @@ const didInit = useRef(false);
   // const [selectedWitnesses, setSelectedWitnesses] = useState([]);
   const [selectedAlignments, setSelectedAlignments] = useState([]);
   const [selectedWitnessTypes, setSelectedWitnessTypes] = useState([]);
+  const handleReset = () => {
+    setSelectedWitness([]);
+    setSelectedTranscripts([]);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,29 +91,29 @@ const didInit = useRef(false);
   //   }
   // }, [selectedTranscripts]);
 
-  // useEffect(() => {
-  //   setSelectedTranscripts(fuzzyTranscripts);
-  // }, [fuzzyTranscripts]);
+  useEffect(() => {
+    setSelectedTranscripts(fuzzyTranscripts);
+  }, [fuzzyTranscripts]);
 
   // useEffect(() => {
   //   if (didMountWitness.current) {
-  //     sendWitnessToParent?.(selectedWitnesses);
+  //     sendWitnessToParent?.(selectedWitness);
   //   } else {
   //     didMountWitness.current = true;
   //   }
-  // }, [selectedWitnesses]);
+  // }, [selectedWitness]);
 
-  // useEffect(() => {
-  //   setSelectedWitnesses(fuzzyWitnesses);
-  // }, [fuzzyWitnesses]);
-//   useEffect(() => {
-//   if (!didInit.current) {
-//     didInit.current = true;
-//     return;
-//   }
+  useEffect(() => {
+    setSelectedWitness(fuzzyWitnesses);
+  }, [fuzzyWitnesses]);
+  useEffect(() => {
+    if (!didInit.current) {
+      didInit.current = true;
+      return;
+    }
 
-//   setSelectedTranscripts(fuzzyTranscripts);
-// }, [fuzzyTranscripts]);
+    setSelectedTranscripts(fuzzyTranscripts);
+  }, [fuzzyTranscripts]);
 
   // useEffect(() => {
   //   if (didMountType.current) {
@@ -128,7 +133,6 @@ const didInit = useRef(false);
   };
 
   const handleWitnessCheck = (option) => {
-
     const fullName = option.fullname;
     setSelectedWitness((prev) =>
       prev.includes(fullName)
@@ -193,6 +197,7 @@ const didInit = useRef(false);
                     style={{ whiteSpace: "nowrap" }}
                     checked={selectedTranscripts.includes(option.name)}
                     onChange={() => handleTranscriptCheck(option)}
+                    onClick={(e) => e.stopPropagation()} // 🔒 Prevent dropdown from closing
                   />
                 ))}
               </Dropdown.Menu>
@@ -235,7 +240,7 @@ const didInit = useRef(false);
           </Form.Group>
 
           {/* Witness Alignment */}
-          <Form.Group className="mb-4">
+          {/* <Form.Group className="mb-4">
             <Form.Label className="fw-semibold">Witness Alignment</Form.Label>
             <div className="d-flex flex-wrap gap-3 ps-1">
               {witnessAlignment.map((alignment) => (
@@ -249,10 +254,10 @@ const didInit = useRef(false);
                 />
               ))}
             </div>
-          </Form.Group>
+          </Form.Group> */}
 
           {/* Witness Type */}
-          <Form.Group className="mb-4">
+          {/* <Form.Group className="mb-4">
             <Form.Label className="fw-semibold">Witness Type</Form.Label>
             <div className="d-flex flex-wrap gap-3 ps-1">
               {witnessType.map((typeObj) => (
@@ -266,17 +271,20 @@ const didInit = useRef(false);
                 />
               ))}
             </div>
-          </Form.Group>
+          </Form.Group> */}
 
           {/* Testimony Count */}
-          <div className="bg-primary text-white text-center py-3 px-2 rounded-3">
-            <h5 className="mb-1 fw-bold">Testimony Count</h5>
-            {/* <h5 className=" mb-0">{testimonyCnt}</h5> */}
-          </div>
+          {/* <div className="bg-primary text-white text-center py-3 px-2 rounded-3"> */}
+          {/* <h5 className="mb-1 fw-bold">Testimony Count</h5> */}
+          {/* <h5 className=" mb-0">{testimonyCnt}</h5> */}
+          {/* </div> */}
 
           <div className="d-flex justify-content-between mt-4">
             <Button variant="secondary" onClick={handleClose}>
               Close
+            </Button>
+            <Button variant="primary" onClick={handleReset}>
+              Reset
             </Button>
           </div>
         </div>

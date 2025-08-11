@@ -47,18 +47,18 @@ function App() {
       <Routes>
         {/* <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/dashboard2" element={<Layout2><Dashboard2 /></Layout2>} /> */}
-        <Route path="/dashboard1" element={<Layout4><Dashboard1 /></Layout4>} />
+        <Route path="/dashboard1" element={<Layout3><Dashboard1 /></Layout3>} />
         <Route path="/dashboard2" element={<Layout5><Dashboard2 /></Layout5>} />
 
         <Route path="/login" element={<Login />} />
         <Route
           path="/testimony"
           element={
-            // <PrivateRoute>
+            <PrivateRoute>
               <Layout3>
                 <Dashboard3 />
               </Layout3>
-            // </PrivateRoute>
+             </PrivateRoute>
           }
         />
         <Route path="*" element={<Navigate to="/testimony" replace />} />

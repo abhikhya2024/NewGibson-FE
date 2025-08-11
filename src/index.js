@@ -7,6 +7,7 @@ import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "./authConfig";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { SearchProvider } from "./contexts/SearchContext"; // <-- adjust path as needed
+import 'react-toastify/dist/ReactToastify.css';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 

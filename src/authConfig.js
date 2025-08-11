@@ -35,9 +35,9 @@
 //----------------------------Farrar and Ball-----------------------------------------------------
 export const msalConfig = {
   auth: {
-    clientId: "b3bb508e-1f88-4224-960e-a75f6085bca9",
+    clientId: "8f345c17-47b8-4069-ac2b-be3e2bde258e",
     authority: "https://login.microsoftonline.com/b917edf1-b482-4145-a6a5-c028777c3168", // Or "common"
-    redirectUri: "https://demo.gibson.legal/testimony",
+    redirectUri: "http://localhost:3000/testimony",
   },
   cache: {
     cacheLocation: "localStorage", // 👈 Required for persistence

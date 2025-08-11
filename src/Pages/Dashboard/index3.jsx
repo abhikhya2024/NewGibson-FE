@@ -19,8 +19,11 @@ import BASE_URL from "../../api";
 import { FaCommentAlt } from "react-icons/fa";
 import Comments from "../../components/Comments";
 import { useSearchContext } from "../../contexts/SearchContext";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+
 const TestimonySearchPage = () => {
-    const {
+  const {
     searchA,
     searchB,
     searchC,
@@ -36,15 +39,16 @@ const TestimonySearchPage = () => {
     selectedWitness,
     selectedTranscripts,
     selectedWitnessType,
-    fuzzyTranscripts, fuzzyWitnesses,
+    fuzzyTranscripts,
+    fuzzyWitnesses,
     setFuzzyTranscripts,
-    setFuzzyWitnesses
+    setFuzzyWitnesses,
   } = useSearchContext();
   const [offset, setOffset] = useState(0);
   const rowsPerPage = 100;
   const [limit] = useState(100); // batch size
   const [hasMore, setHasMore] = useState(true); // stop when no more data
-  const loaderRef = useRef(null); // sentinel for intersection observer
+  const [sources, setSources] = useState(["default", "farrar"]);
 
   const [testimonyId, setTestimonyId] = useState();
   // const [selectedTranscripts, setSelectedTranscripts] = useState([]);
@@ -68,6 +72,47 @@ const TestimonySearchPage = () => {
     setSelectedWitness(data);
   };
 
+const handleDownloadExcel = async () => {
+  try {
+    // Load template
+    const response = await fetch("/template.xlsx");
+    const buffer = await response.arrayBuffer();
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const worksheet = workbook.worksheets[0];
+
+    // Fill data
+    qaPairs.forEach((row, index) => {
+      const rowIndex = index + 2;
+
+      worksheet.getCell(`A${rowIndex}`).value = row.transcript_name || "";
+      worksheet.getCell(`B${rowIndex}`).value = row.question || "";
+      worksheet.getCell(`C${rowIndex}`).value = row.answer || "";
+      worksheet.getCell(`D${rowIndex}`).value = row.cite || "";
+    });
+
+    // Adjust column widths based on content
+    worksheet.columns.forEach((col) => {
+      let maxLength = 10; // minimum width
+      col.eachCell({ includeEmpty: true }, (cell) => {
+        const cellValue = cell.value ? cell.value.toString() : "";
+        if (cellValue.length > maxLength) {
+          maxLength = cellValue.length;
+        }
+      });
+      col.width = maxLength + 2; // add padding
+    });
+
+    // Save file
+    const excelBuffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([excelBuffer]), "testimnony_pairs.xlsx");
+  } catch (error) {
+    console.error("Error exporting Excel:", error);
+  }
+};
+
   // const [selectedWitnessType, setSelectedWitnessType] = useState([]);
 
   const handleWitnessTypeFromChild = (data) => {
@@ -84,9 +129,9 @@ const TestimonySearchPage = () => {
   const [filenameCnt, setFilenameCnt] = useState(0);
   const [witnessNameCnt, setWitnessNameCnt] = useState(0);
 
-  const [initialTestimonyCnt, setInitialTestimonyCnt] = useState()
+  const [initialTestimonyCnt, setInitialTestimonyCnt] = useState();
   const [testimonyCnt, setTestimonyCnt] = useState(0);
-  const [showInitialTestimonyCnt, setShowInitialTestimonyCnt] = useState(true)
+  const [showInitialTestimonyCnt, setShowInitialTestimonyCnt] = useState(true);
   const handleShowFilters = () => setShowFilters(true);
   const handleCloseFilters = () => setShowFilters(false);
   const handleShowComments = (id) => {
@@ -100,11 +145,24 @@ const TestimonySearchPage = () => {
   const fetchWitness = async () => {
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_PROD_API_URL}/api/witness/`
+        `${process.env.REACT_APP_PROD_API_URL}/api/witness/`,
       );
       const data = await res.json();
       console.log("witnesses", data.witnesses.length);
       setWitnessNameCnt(data.witnesses.length);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+    const fetchTranscripts = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/`,
+      );
+      const data = await res.json();
+      console.log("witnesses", data.transcripts.length);
+      setFilenameCnt(data.transcripts.length);
     } catch (err) {
       console.error(err.message);
     }
@@ -131,8 +189,8 @@ const TestimonySearchPage = () => {
         setHasMore(false);
       } else {
         setQaPairs((prev) => [...prev, ...res.data.results]);
-        setInitialTestimonyCnt(res.data.total)
-        setShowInitialTestimonyCnt(true)
+        setInitialTestimonyCnt(res.data.total);
+        setShowInitialTestimonyCnt(true);
       }
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -144,37 +202,38 @@ const TestimonySearchPage = () => {
   useEffect(() => {
     fetchPaginatedData(offset);
     fetchWitness();
+    fetchTranscripts()
   }, [offset]);
 
   const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } =
-        scrollContainerRef.current;
-      if (scrollTop + clientHeight >= scrollHeight - 10 && hasMore && !loading) {
-        setOffset((prev) => prev + rowsPerPage);
-      }
-    };
-    // useEffect(() => {
-    //   fetchPaginatedData(currentPage, rowsPerPage);
-    // }, [currentPage, rowsPerPage]);
-  
-    const [showSearchSection, setShowSearchSection] = useState(false);
-  
-    // const [searchA, setSearchA] = useState("");
-    // const [searchB, setSearchB] = useState("");
-    // const [searchC, setSearchC] = useState("");
-  
-    // const [searchAType, setSearchAType] = useState("exact");
-    // const [searchBType, setSearchBType] = useState("exact");
-    // const [searchCType, setSearchCType] = useState("exact");
-  
-    const [appliedSearch, setAppliedSearch] = useState({
-      A: "",
-      B: "",
-      C: "",
-      AType: "exact",
-      BType: "exact",
-      CType: "exact",
-    });
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    if (scrollTop + clientHeight >= scrollHeight - 10 && hasMore && !loading) {
+      setOffset((prev) => prev + rowsPerPage);
+    }
+  };
+  // useEffect(() => {
+  //   fetchPaginatedData(currentPage, rowsPerPage);
+  // }, [currentPage, rowsPerPage]);
+
+  const [showSearchSection, setShowSearchSection] = useState(false);
+
+  // const [searchA, setSearchA] = useState("");
+  // const [searchB, setSearchB] = useState("");
+  // const [searchC, setSearchC] = useState("");
+
+  // const [searchAType, setSearchAType] = useState("exact");
+  // const [searchBType, setSearchBType] = useState("exact");
+  // const [searchCType, setSearchCType] = useState("exact");
+
+  const [appliedSearch, setAppliedSearch] = useState({
+    A: "",
+    B: "",
+    C: "",
+    AType: "exact",
+    BType: "exact",
+    CType: "exact",
+  });
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -212,75 +271,75 @@ const TestimonySearchPage = () => {
         }
       );
       console.log("namesss", res.data.matching_witnesses);
-      setFuzzyWitnesses(res.data.matching_witnesses);
+      setFilenameCnt(res.data.matching_witnesses);
     } catch (err) {
       console.error("API error:", err.response?.data || err.message);
     }
   };
 
-  const handleSearchSubmit = async () => {
-    setAppliedSearch({
-      A: searchA,
-      B: searchB,
-      C: searchC,
-      AType: searchAType,
-      BType: searchBType,
-      CType: searchCType,
-    });
-    console.log("BType", searchBType);
-    setLoading(true); // start loading spinner
+  // const handleSearchSubmit = async () => {
+  //   setAppliedSearch({
+  //     A: searchA,
+  //     B: searchB,
+  //     C: searchC,
+  //     AType: searchAType,
+  //     BType: searchBType,
+  //     CType: searchCType,
+  //   });
+  //   console.log("BType", searchBType);
+  //   setLoading(true); // start loading spinner
 
-    try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
-        {
-          q1: searchA,
-          mode1: searchAType,
-          q2: searchB,
-          mode2: searchBType,
-          q3: searchC,
-          mode3: searchCType,
-          witness_names: searchB.trim() ? [searchB.trim()] : [], // ✅ FIXED
-          transcript_names: searchC.trim() ? [searchC.trim()] : [], // ✅ FIXED
-        },
-        {
-          params: {
-            page: currentPage,
-            page_size: rowsPerPage,
-          },
-        }
-      );
+  //   try {
+  //     const res = await axios.post(
+  //       `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
+  //       {
+  //         q1: searchA,
+  //         mode1: searchAType,
+  //         q2: searchB,
+  //         mode2: searchBType,
+  //         q3: searchC,
+  //         mode3: searchCType,
+  //         witness_names: searchB.trim() ? [searchB.trim()] : [], // ✅ FIXED
+  //         transcript_names: searchC.trim() ? [searchC.trim()] : [], // ✅ FIXED
+  //       },
+  //       {
+  //         params: {
+  //           page: currentPage,
+  //           page_size: rowsPerPage,
+  //         },
+  //       }
+  //     );
 
-      // Filename count
-      const uniqueFilenames = new Set(
-        res.data.results.map((item) =>
-          item.transcript_name.trim().toLowerCase()
-        )
-      );
+  //     // Filename count
+  //     const uniqueFilenames = new Set(
+  //       res.data.results.map((item) =>
+  //         item.transcript_name.trim().toLowerCase()
+  //       )
+  //     );
 
-      const uniqueCount = uniqueFilenames.size;
-      setTotalCount(res.data.count);
-      setTestimonyCnt(res.data.count)
-      // Witness name count
-      const uniqueWitnessNames = new Set(
-        res.data.results.map((item) => item.witness_name.trim().toLowerCase())
-      );
-      const uniqueWitnessCount = uniqueWitnessNames.size;
-      setWitnessNameCnt(uniqueWitnessCount);
+  //     const uniqueCount = uniqueFilenames.size;
+  //     setTotalCount(res.data.count);
+  //     setTestimonyCnt(res.data.count)
+  //     // Witness name count
+  //     const uniqueWitnessNames = new Set(
+  //       res.data.results.map((item) => item.witness_name.trim().toLowerCase())
+  //     );
+  //     const uniqueWitnessCount = uniqueWitnessNames.size;
+  //     setWitnessNameCnt(uniqueWitnessCount);
 
-      setQaPairs(res.data.results);
-      setFilenameCnt(uniqueCount);
-    } catch (err) {
-      console.error("Failed to fetch paginated data:", err);
-    } finally {
-      setLoading(false);
-    }
+  //     setQaPairs(res.data.results);
+  //     setFilenameCnt(uniqueCount);
+  //   } catch (err) {
+  //     console.error("Failed to fetch paginated data:", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
 
-    getFuzzyTranscripts(searchC);
-    getFuzzyWitnesses(searchB);
-  };
+  //   // getFuzzyTranscripts(searchC);
+  //   // getFuzzyWitnesses(searchB);
+  // };
 
-    const highlightText = (text, keyword) => {
+  const highlightText = (text, keyword) => {
     if (!keyword) return text;
 
     const regex = new RegExp(`(${keyword})`, "gi");
@@ -300,7 +359,11 @@ const TestimonySearchPage = () => {
     );
   };
 
-  const didMountRef = useRef(false);
+
+  useEffect(() => {
+    fetchData();
+
+  }, [searchB,searchA, searchC, searchBType, searchAType, searchCType, selectedTranscripts, selectedWitness]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -318,6 +381,7 @@ const TestimonySearchPage = () => {
           witness_names: selectedWitness,
           transcript_names: selectedTranscripts,
           witness_types: selectedWitnessType,
+          sources: ["farrar", "default"],
         },
         {
           params: {
@@ -332,6 +396,7 @@ const TestimonySearchPage = () => {
       const uniqueFilenames = new Set(
         results.map((item) => item.transcript_name.trim().toLowerCase())
       );
+      {console.log("uniqueFilenames", uniqueFilenames)}
       setFilenameCnt(uniqueFilenames.size);
 
       const uniqueWitnessNames = new Set(
@@ -341,9 +406,8 @@ const TestimonySearchPage = () => {
 
       setQaPairs(results);
       setTotalCount(res.data.count);
-      setShowInitialTestimonyCnt(false)
-      setTestimonyCnt(res.data.count)
-
+      setShowInitialTestimonyCnt(false);
+      setTestimonyCnt(res.data.count);
     } catch (err) {
       console.error("❌ Failed to fetch paginated data:", err);
     } finally {
@@ -352,31 +416,41 @@ const TestimonySearchPage = () => {
   };
 
   // Run only on search/filter changes — skip on first mount
-  const isFirstRun = useRef(true);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isFirstRun.current) {
-        isFirstRun.current = false; // ✅ skip first run
-      } else {
-        fetchData(); // ✅ only run on subsequent changes
-      }
-    }, 0);
+  // useEffect(() => {
+  //       fetchData(); // ✅ only run on subsequent changes
+  
 
-    return () => clearTimeout(timeout); // cleanup
-  }, [
-    searchA,
-    searchB,
-    searchC,
-    searchAType,
-    searchBType,
-    searchCType,
-    selectedWitness,
-    selectedTranscripts,
-    selectedWitnessType,
-  ]);
+  // }, [
+  //   searchA,
+  //   searchB,
+  //   searchC,
+    // searchAType,
+    // searchBType,
+    // searchCType,
+    // selectedWitness,
+    // selectedTranscripts,
+    // selectedWitnessType,
+  // ])
 
-    const handleResetSearch = () => {
+  const isFirstRender = useRef(true);
+
+  // useEffect(() => {
+  //   if (isFirstRender.current) {
+  //     // Skip on initial page load
+  //     isFirstRender.current = false;
+  //     return;
+  //   }
+
+  //   // Only call fetchData if any search field has a value
+  //   if (searchA || searchB || searchC) {
+  //     fetchData();
+  //   }
+  // }, [searchA, searchB, searchC,
+  //   ]); // deps
+
+
+  const handleResetSearch = () => {
     setSearchA("");
     setSearchB("");
     setSearchC("");
@@ -415,35 +489,34 @@ const TestimonySearchPage = () => {
   //       fetchPaginatedData(offset);
   //     }
   //   }, [filenameCnt, witnessNameCnt]);
-  
-    const getColorFromString = (str) => {
-      const colors = [
-        "#6c63ff",
-        "#ff6b6b",
-        "#1abc9c",
-        "#e67e22",
-        "#f39c12",
-        "#3498db",
-        "#9b59b6",
-        "#2ecc71",
-        "#e84393",
-        "#fd79a8",
-      ];
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return colors[Math.abs(hash) % colors.length];
-    };
+
+  const getColorFromString = (str) => {
+    const colors = [
+      "#6c63ff",
+      "#ff6b6b",
+      "#1abc9c",
+      "#e67e22",
+      "#f39c12",
+      "#3498db",
+      "#9b59b6",
+      "#2ecc71",
+      "#e84393",
+      "#fd79a8",
+    ];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
   return (
-      <Container fluid className=" px-3">
+    <Container fluid className=" px-3">
       <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
 
         <Row className="mb-3">
           <Col md={6}>
-            <h2>Testimoniessss</h2>
-{selectedWitness}
+            <h2>Testimony</h2>
           </Col>
           <Col md={6} className="d-flex justify-content-end">
             <Button
@@ -476,7 +549,10 @@ const TestimonySearchPage = () => {
                 <Form.Label>Search by Filename</Form.Label>
                 <Form.Control
                   value={searchC}
-                  onChange={(e) => setSearchC(e.target.value)}
+                  onChange={(e) => 
+                    { fetchData()
+                      setSearchC(e.target.value)
+                    }}
                   placeholder="Search by Filename"
                   className="show-page-sorath"
                 />
@@ -489,7 +565,8 @@ const TestimonySearchPage = () => {
                       label={opt}
                       value={opt}
                       checked={searchCType === opt}
-                      onChange={(e) => setSearchCType(e.target.value)}
+                      onChange={(e) => {fetchData()
+                        setSearchCType(e.target.value)}}
                     />
                   ))}
                 </div>
@@ -515,7 +592,9 @@ const TestimonySearchPage = () => {
                 <Form.Label>Search by Witness</Form.Label>
                 <Form.Control
                   value={searchB}
-                  onChange={(e) => setSearchB(e.target.value)}
+                  onChange={(e) => { 
+                    setSearchB(e.target.value)
+                  }}
                   placeholder="Search by Witness"
                   className="show-page-sorath"
                 />
@@ -530,6 +609,8 @@ const TestimonySearchPage = () => {
                       checked={searchBType === opt}
                       onChange={(e) => {
                         setSearchBType(e.target.value);
+
+                        // fetchData()
                       }}
                     />
                   ))}
@@ -556,7 +637,10 @@ const TestimonySearchPage = () => {
                 <Form.Label>Search All Testimony</Form.Label>
                 <Form.Control
                   value={searchA}
-                  onChange={(e) => setSearchA(e.target.value)}
+                  onChange={(e) => {
+                    fetchData()
+                    setSearchA(e.target.value)
+                  }}
                   placeholder="Search by test"
                   className="show-page-sorath"
                 />
@@ -570,7 +654,8 @@ const TestimonySearchPage = () => {
                       label={opt}
                       value={opt}
                       checked={searchAType === opt}
-                      onChange={(e) => setSearchAType(e.target.value)}
+                      onChange={(e) => {fetchData();
+                        setSearchAType(e.target.value)}}
                     />
                   ))}
                 </div>
@@ -590,18 +675,20 @@ const TestimonySearchPage = () => {
                         fontWeight: "bold", // Optional: makes number more prominent
                       }}
                     >
-                      {showInitialTestimonyCnt ? initialTestimonyCnt: testimonyCnt}
+                      {showInitialTestimonyCnt
+                        ? initialTestimonyCnt
+                        : testimonyCnt}
                     </div>
                   </Col>
                   <Col>
                     <div className="mt-3 d-flex justify-content-end gap-2">
-                      {/* <Button
+                      <Button
                         variant="secondary"
-                        size="sm"
+                        // size="sm"
                         onClick={handleResetSearch}
                       >
                         Reset
-                      </Button> */}
+                      </Button>
                       {/* <Button
                         variant="primary"
                         size="sm"
@@ -620,11 +707,19 @@ const TestimonySearchPage = () => {
         </Collapse>
 
         {/* Table */}
+
         <div
           style={{ height: "600px", overflowY: "auto" }}
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
+          // ref={scrollContainerRef}
+          // onScroll={handleScroll}
         >
+          <Button
+            variant="success"
+            className="mb-3"
+            onClick={handleDownloadExcel}
+          >
+            Download Excel
+          </Button>
           <Table responsive bordered className="align-middle rounded-3">
             <thead className="table-sorath-three">
               <tr>
@@ -684,7 +779,7 @@ const TestimonySearchPage = () => {
                   <td style={{ width: "100px" }}>
                     {row.transcript_name}
                     <br />
-                    {row.cite} {row.id}
+                    {row.cite}
                   </td>
 
                   <td style={{ width: "200px" }}>
@@ -758,14 +853,20 @@ const TestimonySearchPage = () => {
           </Col> */}
         </Row>
       </Card>
-            <Filter
+      <Filter
         show={showFilters}
         handleClose={handleCloseFilters}
         testimonyCnt={testimonyCnt}
         // fuzzyTranscripts={fuzzyTranscripts}
         // fuzzyWitnesses={fuzzyWitnesses}
       />
-      </Container>
+
+      <Comments
+        showComments={showComments}
+        handleClose={handleCloseComments}
+        testimonyId={testimonyId}
+      ></Comments>
+    </Container>
   );
 };
 
