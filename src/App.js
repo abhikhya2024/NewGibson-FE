@@ -23,6 +23,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './assets/css/style.css';
 import { useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
+import TranscriptsByWitness from './Pages/MainContent/TranscriptsByWitness';
 
 // ✅ Private route wrapper using MSAL hook
 function PrivateRoute({ children }) {
@@ -49,18 +50,20 @@ function App() {
         <Route path="/dashboard2" element={<Layout2><Dashboard2 /></Layout2>} /> */}
         <Route path="/dashboard1" element={<Layout3><Dashboard1 /></Layout3>} />
         <Route path="/dashboard2" element={<Layout5><Dashboard2 /></Layout5>} />
+        <Route path="/transcripts" element={<Layout3><TranscriptsByWitness /></Layout3>} />
 
         <Route path="/login" element={<Login />} />
         <Route
           path="/testimony"
           element={
-            <PrivateRoute>
+            // <PrivateRoute>
               <Layout3>
                 <Dashboard3 />
               </Layout3>
-             </PrivateRoute>
+            //  </PrivateRoute>
           }
         />
+        
         <Route path="*" element={<Navigate to="/testimony" replace />} />
       </Routes>
     </BrowserRouter>

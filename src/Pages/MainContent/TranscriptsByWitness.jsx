@@ -16,7 +16,7 @@ import {
   Spinner,
   Modal,
 } from "react-bootstrap";
-import Filter from "../../components/Filter";
+import Filter from "../../components/WitnessFilter";
 import BASE_URL from "../../api";
 import { FaCommentAlt } from "react-icons/fa";
 import Comments from "../../components/Comments";
@@ -25,7 +25,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import ClipLoader from "react-spinners/ClipLoader";
 
-const TestimonySearchPage = () => {
+const TranscriptsByWitness = () => {
   const {
     searchA,
     searchB,
@@ -59,11 +59,10 @@ const TestimonySearchPage = () => {
   const handleShow = () => setShow(true);
 
   const [testimonyId, setTestimonyId] = useState();
-  const databases = ["DocsSHBLaguenesse", "DocsSHBPMProctor", "DocsSHBPMCummings", "DocsSHBPMRuckdeschel", "DocsSHBPMProchaska"]
   // const [selectedTranscripts, setSelectedTranscripts] = useState([]);
   // const [fuzzyTranscripts, setFuzzyTranscripts] = useState([]);
   // const [fuzzyWitnesses, setFuzzyWitnesses] = useState([]);
-  const [selectedDatabases, setSelectedDatabases] = useState([]);
+
   const handleTranscriptFromChild = (data) => {
     setSelectedTranscripts(data);
   };
@@ -80,10 +79,6 @@ const TestimonySearchPage = () => {
   const handleWitnessFromChild = (data) => {
     setSelectedWitness(data);
   };
-
-  const handleDbChange = (data)=> {
-    setSelectedDatabases(data)
-  }
 
   const handleDownloadExcel = async () => {
     try {
@@ -152,6 +147,7 @@ const TestimonySearchPage = () => {
     setShowComments(true);
   };
   const handleCloseComments = () => setShowComments(false);
+
   const scrollContainerRef = useRef(null);
 
   const fetchWitness = async () => {
@@ -228,7 +224,7 @@ const TestimonySearchPage = () => {
   //   fetchPaginatedData(currentPage, rowsPerPage);
   // }, [currentPage, rowsPerPage]);
 
-  const [showSearchSection, setShowSearchSection] = useState(true);
+  const [showSearchSection, setShowSearchSection] = useState(false);
 
   // const [searchA, setSearchA] = useState("");
   // const [searchB, setSearchB] = useState("");
@@ -623,53 +619,11 @@ const TestimonySearchPage = () => {
       </Modal>
       <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
-      <Row>
-        <Col md={6}>
-        </Col>
-<Col md={6}>
-  <Form.Group className="mb-3">
-    <Form.Label className="fw-semibold">Database</Form.Label>
-    <Dropdown className="w-100">
-      <Dropdown.Toggle
-        variant="light"
-        className="w-100 text-start border rounded-2"
-      >
-        {selectedDatabases.length > 0 ? (
-          <div className="d-flex flex-wrap gap-1">
-            {selectedDatabases.map((db, idx) => (
-              <span key={idx} className="badge bg-primary">
-                {db.name}
-              </span>
-            ))}
-          </div>
-        ) : (
-          "Select Database(s)"
-        )}
-      </Dropdown.Toggle>
 
-      <Dropdown.Menu style={{ maxHeight: "200px", overflowY: "auto" }}>
-        {databases.map((option) => (
-          <Form.Check
-            key={option.id}
-            type="checkbox"
-            label={option}
-            className="px-3 py-1"
-            style={{ whiteSpace: "nowrap" }}
-            checked={selectedDatabases.some((db) => db.id === option.id)}
-            onChange={() => handleDbChange(option)}
-            onClick={(e) => e.stopPropagation()} // 🔒 Prevent dropdown from closing
-          />
-        ))}
-      </Dropdown.Menu>
-    </Dropdown>
-  </Form.Group>
-</Col>
-      </Row>
         <Row className="mb-3">
-          <Col md={4}>
-            <h2>Testimony</h2>
+          <Col md={6}>
+            <h2>Transcripts by Witness</h2>
           </Col>
-
           <Col md={6} className="d-flex justify-content-end">
             <Button
               variant="outline-primary"
@@ -879,7 +833,7 @@ const TestimonySearchPage = () => {
 
         {/* Table */}
 
-        <div class="container"
+        <div
           style={{ height: "600px", overflowY: "auto" }}
           // ref={scrollContainerRef}
           // onScroll={handleScroll}
@@ -901,116 +855,91 @@ const TestimonySearchPage = () => {
               </div>
             </div>
           ) : (
-           <Table
-              responsive
-              bordered
-              className="align-middle rounded-3 qa-table"
-            >
-              <colgroup>
-                <col style={{ width: "20%" }} /> {/* Filename and Cite */}
-                <col style={{ width: "55%" }} /> {/* Question and Answers */}
-                <col style={{ width: "25%" }} /> {/* Comments */}
-              </colgroup>
-
+            <Table responsive bordered className="align-middle rounded-3">
               <thead className="table-sorath-three">
                 <tr>
-                  <th>Filename and Cite</th>
-                  <th>Question and Answers</th>
-                  <th>Comments</th>
+                  <th style={{ width: "20%" }}>Filename and Cite</th>
+                  <th style={{ width: "60%" }}>Question and Answers</th>
+                  <th style={{ width: "20%" }}>Comments</th>
                 </tr>
               </thead>
-
               <tbody>
-                {qaPairs.map((row) => (
-                  <tr key={row.id ?? row.transcript_name}>
-                    <td>
+                {qaPairs.map((row, idx) => (
+                  <tr key={idx}>
+                    <td style={{ width: "20%" }}>
                       {row.transcript_name}
                       <br />
                       {row.cite}
                     </td>
-
-                    <td>
-                      <div className="truncate-wrap">
-                        {highlightText(row.question, searchA)}
-                      </div>
+                    <td style={{ width: "60%" }}>
+                      <div>{highlightText(row.question, searchA)}</div>
                       <br />
-                      <div className="truncate-wrap">
-                        {highlightText(row.answer, searchA)}
-                      </div>
+                      <div>{highlightText(row.answer, searchA)}</div>
                     </td>
+                    <td style={{ width: "20%" }}>
 
-                    <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: "12px",
-                        }}
-                      >
-                        {/* Comment Icon */}
-                        <FaCommentAlt
-                          size={22}
-                          onClick={() => handleShowComments(row.id)}
-                          style={{ cursor: "pointer", marginTop: "4px" }}
-                        />
+<div
+  style={{
+    display: "flex",
+    alignItems: "flex-start", // aligns icon at top with comments column
+    gap: "12px"
+  }}
+>
+  {/* Comment Icon */}
+  <FaCommentAlt
+  size={22}
+    onClick={() => handleShowComments(row.id)}
+    style={{ cursor: "pointer", marginTop: "4px" }} // aligns better with comments
+  />
 
-                        {/* Comments in a column */}
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
-                          }}
-                        >
-                          {row.comments &&
-                            row.comments.map((commenter, i) => {
-                              const initials = commenter.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase();
+  {/* Comments in a column */}
+  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+    {row.comments &&
+      row.comments.map((commenter, i) => {
+        const initials = commenter.name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase();
 
-                              const bgColor = getColorFromString(
-                                commenter.email || commenter.name
-                              );
+        const bgColor = getColorFromString(commenter.email || commenter.name);
 
-                              return (
-                                <div
-                                  key={i}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <div
-                                    onClick={() => handleShowComments(row.id)}
-                                    className="ms-2"
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      width: 32,
-                                      height: 32,
-                                      borderRadius: "50%",
-                                      backgroundColor: bgColor,
-                                      color: "white",
-                                      fontWeight: "bold",
-                                      fontSize: "14px",
-                                      flexShrink: 0,
-                                    }}
-                                    title={commenter.name}
-                                  >
-                                    {initials}
-                                  </div>
-                                  <p style={{ margin: 0 }}>
-                                    {commenter.content}
-                                  </p>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </div>
+        return (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+          >
+            <div
+              onClick={() => handleShowComments(row.id)}
+              className="ms-2"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                backgroundColor: bgColor,
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "14px",
+                flexShrink: 0
+              }}
+              title={commenter.name}
+            >
+              {initials}
+            </div>
+            <p style={{ margin: 0 }}>{commenter.content}</p>
+          </div>
+        );
+      })}
+  </div>
+</div>
+
                     </td>
                   </tr>
                 ))}
@@ -1095,4 +1024,4 @@ const TestimonySearchPage = () => {
   );
 };
 
-export default TestimonySearchPage;
+export default TranscriptsByWitness;
