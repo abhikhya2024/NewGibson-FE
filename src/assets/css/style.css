@@ -467,3 +467,70 @@ line {
     position: relative;
 }
 
+.qa-table {
+  table-layout: fixed;  
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.qa-table .cell {
+  vertical-align: top;
+  padding: 8px 12px;
+  overflow-wrap: anywhere;     
+  word-break: break-word;     
+}
+
+.truncate-wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.comments-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;    
+}
+
+.comments-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.comment-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;  
+}
+
+.comment-text {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis; 
+  white-space: normal;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  
+  .qa-table {
+    display: table;
+  }
+}
