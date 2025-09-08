@@ -37,10 +37,10 @@ export const msalConfig = {
   auth: {
     clientId: "5b17244b-6406-4d81-ac8a-436a8522ba71",
     authority: "https://login.microsoftonline.com/b917edf1-b482-4145-a6a5-c028777c3168", // Or "common"
-    redirectUri: "https://demo.gibson.legal/testimony",
+    redirectUri: "https://uat.gibson.legal/testimony",
   },
   cache: {
-    cacheLocation: "localStorage", // 👈 Required for persistence
+  cacheLocation: "localStorage", // 👈 Required for persistence
     storeAuthStateInCookie: true,  // 👈 Needed for IE/Edge legacy support
   }
 };
