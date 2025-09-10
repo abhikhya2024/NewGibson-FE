@@ -48,7 +48,7 @@ function App() {
       <Routes>
         {/* <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/dashboard2" element={<Layout2><Dashboard2 /></Layout2>} /> */}
-        <Route path="/dashboard1" element={<Layout3><Dashboard1 /></Layout3>} />
+        <Route path="/dashboard" element={<Layout5><Dashboard1 /></Layout5>} />
         <Route path="/dashboard2" element={<Layout5><Dashboard2 /></Layout5>} />
         <Route path="/transcripts" element={<Layout3><TranscriptsByWitness /></Layout3>} />
 
@@ -57,9 +57,9 @@ function App() {
           path="/testimony"
           element={
             // <PrivateRoute>
-              <Layout3>
+              <Layout5>
                 <Dashboard3 />
-              </Layout3>
+              </Layout5>
             //  </PrivateRoute>
           }
         />

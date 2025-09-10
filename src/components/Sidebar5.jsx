@@ -4,11 +4,11 @@ const Sidebar = ({ isOpen }) => {
   const location = useLocation();
 
   const navItems = [
-    { to: '/dashboard2', icon: 'bi-graph-up', label: 'Dashboard 2' },
-    { to: '/table', icon: 'bi-house', label: 'Table 1' },
-    { to: '/table2', icon: 'bi-trophy', label: 'Table 2' },
-    { to: '/table3', icon: 'bi-cart', label: 'Table 3' },
-    { to: '/dashboard1', icon: 'bi-box-seam', label: 'Dashboard 1' },
+    { to: '/dashboard', icon: 'bi-graph-up', label: 'Dashboard' },
+    { to: '/testimony', icon: 'bi-house', label: 'Search All Testimony' },
+    { to: '/testimony', icon: 'bi-trophy', label: 'Transcripts' },
+    // { to: '/table3', icon: 'bi-cart', label: 'Table 3' },
+    // { to: '/dashboard1', icon: 'bi-box-seam', label: 'Dashboard 1' },
     
   ];
 

@@ -142,7 +142,7 @@ const TestimonySearchPage = () => {
   const [filenameCnt, setFilenameCnt] = useState(0);
   const [witnessNameCnt, setWitnessNameCnt] = useState(0);
 
-  const [initialTestimonyCnt, setInitialTestimonyCnt] = useState();
+  const [initialTestimonyCnt, setInitialTestimonyCnt] = useState(0);
   const [testimonyCnt, setTestimonyCnt] = useState(0);
   const [showInitialTestimonyCnt, setShowInitialTestimonyCnt] = useState(true);
   const handleShowFilters = () => setShowFilters(true);
@@ -577,12 +577,12 @@ const TestimonySearchPage = () => {
             <ul>
               <li>
                 <p className="mb-1">
-                  I will match <b>spelling mistakes</b> by 2 charactors.
+                  It will match <b>spelling mistakes</b> by 2 characters.
                 </p>
               </li>
               <li>
                 <p className="mb-1">
-                  It is tollerant to{" "}
+                  It is tolerant to{" "}
                   <b>punctuation, capitalization and spacing.</b>
                 </p>
               </li>
@@ -667,7 +667,6 @@ const TestimonySearchPage = () => {
       </Row>
         <Row className="mb-3">
           <Col md={4}>
-            <h2>Testimony</h2>
           </Col>
 
           <Col md={6} className="d-flex justify-content-end">
@@ -920,7 +919,7 @@ const TestimonySearchPage = () => {
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody className="t-body">
                 {qaPairs.map((row) => (
                   <tr key={row.id ?? row.transcript_name}>
                     <td>

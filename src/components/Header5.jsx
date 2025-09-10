@@ -12,25 +12,25 @@ const Header = () => {
   };
 
   return (
-    <header className="sorath-header d-flex justify-content-between align-items-center px-3 py-2 sticky-top">
+    <header className="sorath-header d-flex justify-content-end align-items-center px-3 py-2 sticky-top">
       {/* Left: Title + Search */}
-      <div className="d-flex align-items-center gap-3">
+      {/* <div className="d-flex align-items-center gap-3">
         <h4 className="mb-0 sorath-page-title">Dashboard</h4>
-      </div>
+      </div> */}
 
       {/* Right: Icons */}
       <div className="d-flex align-items-center gap-4">
         {/* Search Box */}
-        <div className="sorath-search-box d-none d-md-block position-relative">
+        {/* <div className="sorath-search-box d-none d-md-block position-relative">
           <input
             type="text"
             className="form-control sorath-search-input ps-5"
             placeholder="Search here..."
           />
           <BsSearch className="position-absolute top-50 start-0 translate-middle-y ms-3 sorath-search-svg" />
-        </div>
+        </div> */}
         {/* Language Dropdown */}
-        <Dropdown>
+        {/* <Dropdown>
           <Dropdown.Toggle
             variant="light"
             id="dropdown-language"
@@ -63,7 +63,7 @@ const Header = () => {
             <Dropdown.Item>Hindi (IN)</Dropdown.Item>
             <Dropdown.Item>Français (FR)</Dropdown.Item>
           </Dropdown.Menu>
-        </Dropdown>
+        </Dropdown> */}
 
         {/* Theme Toggle */}
         <button onClick={toggleDarkMode} className="sorath-theme-toggle">
@@ -87,8 +87,8 @@ const Header = () => {
               height="32"
             />
             <div className="d-none d-md-block text-start">
-              <div className="sorath-profile-name ">Musfiq</div>
-              <div className="small text-muted">Admin</div>
+              <div className="sorath-profile-name ">Abhikhya</div>
+              <div className="small text-muted">Ashi</div>
             </div>
 
             <svg
