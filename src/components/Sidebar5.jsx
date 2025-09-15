@@ -6,7 +6,7 @@ const Sidebar = ({ isOpen }) => {
   const navItems = [
     { to: '/dashboard', icon: 'bi-graph-up', label: 'Dashboard' },
     { to: '/testimony', icon: 'bi-house', label: 'Search All Testimony' },
-    { to: '/testimony', icon: 'bi-trophy', label: 'Transcripts' },
+    { to: '/transcripts', icon: 'bi-trophy', label: 'Transcripts' },
     // { to: '/table3', icon: 'bi-cart', label: 'Table 3' },
     // { to: '/dashboard1', icon: 'bi-box-seam', label: 'Dashboard 1' },
     
@@ -41,18 +41,7 @@ const Sidebar = ({ isOpen }) => {
       </div>
 
       {/* Get Pro Box */}
-      <div className="bg-primary rounded text-center text-white p-3 mt-auto sorath-pro-box">
-        <div className="mb-2">
-          <i className="bi bi-lightning-charge-fill fs-4"></i>
-        </div>
-        {isOpen && (
-          <>
-            <h6 className="fw-bold mb-1">Panasonic Pro</h6>
-            <p className="mb-2 small">Get access to all features on tetumbas</p>
-            <button className="btn btn-light btn-sm text-primary rounded-pill px-3">Get Pro</button>
-          </>
-        )}
-      </div>
+    
     </div>
   );
 };

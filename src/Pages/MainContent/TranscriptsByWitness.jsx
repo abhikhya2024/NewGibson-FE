@@ -137,6 +137,7 @@ const TranscriptsByWitness = () => {
   const [filenameCnt, setFilenameCnt] = useState(0);
   const [witnessNameCnt, setWitnessNameCnt] = useState(0);
 
+  const [transcripts, setTranscripts] = useState([]);
   const [initialTestimonyCnt, setInitialTestimonyCnt] = useState();
   const [testimonyCnt, setTestimonyCnt] = useState(0);
   const [showInitialTestimonyCnt, setShowInitialTestimonyCnt] = useState(true);
@@ -170,6 +171,7 @@ const TranscriptsByWitness = () => {
       );
       const data = await res.json();
       console.log("witnesses", data.transcripts.length);
+      setTranscripts(data.transcripts);
       setFilenameCnt(data.transcripts.length);
     } catch (err) {
       console.error(err.message);
@@ -380,6 +382,31 @@ const TranscriptsByWitness = () => {
     selectedWitness,
   ]);
 
+const handleDownload = async () => {
+  const filename = "IPR2019-01313 1022 - Lipson Deposition.txt";
+
+  try {
+    const response = await fetch("/api/transcript/download-transcript/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to download file");
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+  } catch (err) {
+    console.error("Error downloading file:", err);
+  }
+};
   const fetchData = async () => {
     setLoading(true);
 
@@ -466,6 +493,7 @@ const TranscriptsByWitness = () => {
     }
   };
 
+
   const getColorFromString = (str) => {
     const colors = [
       "#6c63ff",
@@ -484,6 +512,8 @@ const TranscriptsByWitness = () => {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return colors[Math.abs(hash) % colors.length];
+
+    
   };
   return (
     <Container fluid className=" px-3">
@@ -622,7 +652,16 @@ const TranscriptsByWitness = () => {
 
         <Row className="mb-3">
           <Col md={6}>
-            <h2>Transcripts by Witness</h2>
+              <Button onClick={handleDownload}>
+      Download Transcript
+    </Button>
+              <Button
+            variant="success"
+            className="mb-3"
+            onClick={handleDownloadExcel}
+          >
+            Download Excel
+          </Button>
           </Col>
           <Col md={6} className="d-flex justify-content-end">
             <Button
@@ -648,61 +687,13 @@ const TranscriptsByWitness = () => {
         {/* Conditional Search Section */}
 
         <Collapse in={showSearchSection}>
-          <div className="p-3 bg-light rounded border mb-3">
             <Row>
               {/* Search C */}
-              <Col md={4}>
-                <Form.Label>Search by Filename</Form.Label>
-                <Form.Control
-                  value={searchC}
-                  onChange={(e) => {
-                    fetchData();
-                    setSearchC(e.target.value);
-                  }}
-                  placeholder="Search by Filename"
-                  className="show-page-sorath"
-                />
-                <div className="mt-2 d-flex gap-2">
-                  {["fuzzy", "boolean", "exact"].map((opt) => (
-                    <Form.Check
-                      key={`searchC-${opt}`}
-                      type="radio"
-                      name="searchCType" // ✅ UNIQUE name
-                      label={opt}
-                      value={opt}
-                      checked={searchCType === opt}
-                      onChange={(e) => {
-                        fetchData();
-                        setSearchCType(e.target.value);
-                      }}
-                    />
-                  ))}{" "}
-                  <i
-                    onClick={handleShow}
-                    style={{ cursor: "pointer" }}
-                    className="bi bi-question-circle-fill"
-                  ></i>{" "}
-                </div>
-                <div
-                  className="mt-3"
-                  style={{
-                    width: "65px",
-                    height: "40px",
-                    border: "2px solid #11b3ef",
-                    borderRadius: "10px",
-                    boxShadow: "4px 4px 10px grey", // blue shadow
-                    display: "flex", // 🔹 Flexbox to center content
-                    justifyContent: "center", // 🔹 Center horizontally
-                    alignItems: "center", // 🔹 Center vertically
-                    fontWeight: "bold", // Optional: makes number more prominent
-                  }}
-                >
-                  {filenameCnt}
-                </div>
-              </Col>
+            <div className="p-3 bg-light rounded border mb-3">
+
               {/* Search B */}
               <Col md={4}>
-                <Form.Label>Search by Witness</Form.Label>
+                <Form.Label>Search by Witness Name</Form.Label>
                 <Form.Control
                   value={searchB}
                   onChange={(e) => {
@@ -750,85 +741,9 @@ const TranscriptsByWitness = () => {
                   {witnessNameCnt}
                 </div>
               </Col>
-              {/* Search A */}
-              <Col md={4}>
-                <Form.Label>Search All Testimony</Form.Label>
-                <Form.Control
-                  value={searchA}
-                  onChange={(e) => {
-                    fetchData();
-                    setSearchA(e.target.value);
-                  }}
-                  placeholder="Search by test"
-                  className="show-page-sorath"
-                />
-
-                <div className="mt-2 d-flex gap-2">
-                  {["fuzzy", "boolean", "exact"].map((opt) => (
-                    <Form.Check
-                      key={`searchA-${opt}`}
-                      type="radio"
-                      name="searchAType" // ✅ UNIQUE name
-                      label={opt}
-                      value={opt}
-                      checked={searchAType === opt}
-                      onChange={(e) => {
-                        fetchData();
-                        setSearchAType(e.target.value);
-                      }}
-                    />
-                  ))}{" "}
-                  <i
-                    onClick={handleShow}
-                    style={{ cursor: "pointer" }}
-                    className="bi bi-question-circle-fill"
-                  ></i>{" "}
-                </div>
-                <Row>
-                  <Col>
-                    <div
-                      className="mt-3"
-                      style={{
-                        width: "65px",
-                        height: "40px",
-                        border: "2px solid #11b3ef",
-                        borderRadius: "10px",
-                        boxShadow: "4px 4px 10px grey", // blue shadow
-                        display: "flex", // 🔹 Flexbox to center content
-                        justifyContent: "center", // 🔹 Center horizontally
-                        alignItems: "center", // 🔹 Center vertically
-                        fontWeight: "bold", // Optional: makes number more prominent
-                      }}
-                    >
-                      {showInitialTestimonyCnt
-                        ? initialTestimonyCnt
-                        : testimonyCnt}
-                    </div>
-                  </Col>
-                  <Col>
-                    <div className="mt-3 d-flex justify-content-end gap-2">
-                      <Button
-                        variant="secondary"
-                        // size="sm"
-                        onClick={handleResetSearch}
-                      >
-                        Reset
-                      </Button>
-                      {/* <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() =>
-                          handleSearchSubmit(currentPage, rowsPerPage)
-                        }
-                      >
-                        Apply Search
-                      </Button> */}
-                    </div>
-                  </Col>
-                </Row>
-              </Col>
-            </Row>
           </div>
+
+            </Row>
         </Collapse>
 
         {/* Table */}
@@ -838,13 +753,7 @@ const TranscriptsByWitness = () => {
           // ref={scrollContainerRef}
           // onScroll={handleScroll}
         >
-          <Button
-            variant="success"
-            className="mb-3"
-            onClick={handleDownloadExcel}
-          >
-            Download Excel
-          </Button>
+        
           {loading ? (
             <div
               className="d-flex justify-content-center align-items-center"
@@ -858,88 +767,32 @@ const TranscriptsByWitness = () => {
             <Table responsive bordered className="align-middle rounded-3">
               <thead className="table-sorath-three">
                 <tr>
-                  <th style={{ width: "20%" }}>Filename and Cite</th>
-                  <th style={{ width: "60%" }}>Question and Answers</th>
-                  <th style={{ width: "20%" }}>Comments</th>
+                  <th style={{ width: "20%" }}>Witness</th>
+                  <th style={{ width: "20%" }}>Date</th>
+                  <th style={{ width: "20%" }}>Transcript</th>
+                  <th style={{ width: "20%" }}>Case</th>
+                  <th style={{ width: "20%" }}>Date Created</th>
+
                 </tr>
               </thead>
-              <tbody>
-                {qaPairs.map((row, idx) => (
+              <tbody className="t-body">
+                {transcripts.map((row, idx) => (
                   <tr key={idx}>
                     <td style={{ width: "20%" }}>
-                      {row.transcript_name}
-                      <br />
-                      {row.cite}
-                    </td>
-                    <td style={{ width: "60%" }}>
-                      <div>{highlightText(row.question, searchA)}</div>
-                      <br />
-                      <div>{highlightText(row.answer, searchA)}</div>
+                      {row.witness_name}
                     </td>
                     <td style={{ width: "20%" }}>
-
-<div
-  style={{
-    display: "flex",
-    alignItems: "flex-start", // aligns icon at top with comments column
-    gap: "12px"
-  }}
->
-  {/* Comment Icon */}
-  <FaCommentAlt
-  size={22}
-    onClick={() => handleShowComments(row.id)}
-    style={{ cursor: "pointer", marginTop: "4px" }} // aligns better with comments
-  />
-
-  {/* Comments in a column */}
-  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-    {row.comments &&
-      row.comments.map((commenter, i) => {
-        const initials = commenter.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase();
-
-        const bgColor = getColorFromString(commenter.email || commenter.name);
-
-        return (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px"
-            }}
-          >
-            <div
-              onClick={() => handleShowComments(row.id)}
-              className="ms-2"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                backgroundColor: bgColor,
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "14px",
-                flexShrink: 0
-              }}
-              title={commenter.name}
-            >
-              {initials}
-            </div>
-            <p style={{ margin: 0 }}>{commenter.content}</p>
-          </div>
-        );
-      })}
-  </div>
-</div>
-
+                      <div>{highlightText(row.transcript_date, searchA)}</div>
+                      {/* <div>{highlightText(row.answer, searchA)}</div> */}
+                    </td>
+                    <td style={{ width: "20%" }}>
+                      {row.name}
+                    </td>
+                    <td style={{ width: "20%" }}>
+                      {row.case_name}
+                    </td>
+                    <td style={{ width: "20%" }}>
+                      {new Date(row.created_at).toLocaleDateString("en-CA")}
                     </td>
                   </tr>
                 ))}
