@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-
+import logo from "../assets/img/cc.png"
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
 
@@ -17,8 +17,9 @@ const Sidebar = ({ isOpen }) => {
       {/* Logo + Brand */}
       <div>
         <div className="d-flex align-items-center mb-4">
-          <div className="sorath-logo-box me-3">PS</div>
-          {isOpen && <h5 className="mb-0 fw-semibold">Panasonic</h5>}
+          {/* <div className="sorath-logo-box me-3">PS</div> */}
+          {/* {isOpen && <h5 className="mb-0 fw-semibold">Panasonic</h5>} */}
+          <img height={170} src={logo} alt='logo'/>
         </div>
 
         {/* Navigation Items */}

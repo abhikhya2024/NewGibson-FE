@@ -24,6 +24,9 @@ import { useSearchContext } from "../../contexts/SearchContext";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import ClipLoader from "react-spinners/ClipLoader";
+import { ToastContainer, toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const TranscriptsByWitness = () => {
   const {
@@ -47,6 +50,7 @@ const TranscriptsByWitness = () => {
     setFuzzyTranscripts,
     setFuzzyWitnesses,
   } = useSearchContext();
+
   const [offset, setOffset] = useState(0);
   const rowsPerPage = 100;
   const [limit] = useState(100); // batch size
@@ -54,7 +58,8 @@ const TranscriptsByWitness = () => {
   const [sources, setSources] = useState(["default", "farrar"]);
   // Help modal
   const [show, setShow] = useState(false);
-
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
@@ -62,6 +67,8 @@ const TranscriptsByWitness = () => {
   // const [selectedTranscripts, setSelectedTranscripts] = useState([]);
   // const [fuzzyTranscripts, setFuzzyTranscripts] = useState([]);
   // const [fuzzyWitnesses, setFuzzyWitnesses] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleTranscriptFromChild = (data) => {
     setSelectedTranscripts(data);
@@ -140,6 +147,7 @@ const TranscriptsByWitness = () => {
   const [transcripts, setTranscripts] = useState([]);
   const [initialTestimonyCnt, setInitialTestimonyCnt] = useState();
   const [testimonyCnt, setTestimonyCnt] = useState(0);
+  const [transcriptCnt, setTranscriptCnt] = useState(0);
   const [showInitialTestimonyCnt, setShowInitialTestimonyCnt] = useState(true);
   const handleShowFilters = () => setShowFilters(true);
   const handleCloseFilters = () => setShowFilters(false);
@@ -151,32 +159,70 @@ const TranscriptsByWitness = () => {
 
   const scrollContainerRef = useRef(null);
 
-  const fetchWitness = async () => {
+  // const fetchWitness = async () => {
+  //   try {
+  //     const res = await fetch(
+  //       `${process.env.REACT_APP_PROD_API_URL}/api/witness/`
+  //     );
+  //     const data = await res.json();
+  //     console.log("witnesses", data.witnesses.length);
+  //     setWitnessNameCnt(data.witnesses.length);
+  //   } catch (err) {
+  //     console.error(err.message);
+  //   }
+  // };
+
+  // const fetchTranscripts = async () => {
+  //   try {
+  //     const res = await fetch(
+  //       `${process.env.REACT_APP_PROD_API_URL}/api/transcript/`
+  //     );
+  //     const data = await res.json();
+  //     console.log("witnesses", data.transcripts.length);
+  //     setTranscripts(data.transcripts);
+  //     setFilenameCnt(data.transcripts.length);
+  //   } catch (err) {
+  //     console.error(err.message);
+  //   }
+  // };
+
+  const fetchData = async () => {
+    setLoading(true);
+
     try {
-      const res = await fetch(
-        `${process.env.REACT_APP_PROD_API_URL}/api/witness/`
+      const res = await axios.post(
+        `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-transcript-search/`,
+        {
+          q1: searchA,
+          mode1: searchAType,
+          q2: searchB,
+          mode2: searchBType,
+          q3: startDate,
+          q4: endDate,
+          // mode3: searchCType,
+          witness_names: selectedWitness,
+          transcript_names: selectedTranscripts,
+          witness_types: selectedWitnessType,
+          sources: ["farrar", "default"],
+        },
+        {
+          params: {
+            page: currentPage,
+            page_size: rowsPerPage,
+          },
+        }
       );
-      const data = await res.json();
-      console.log("witnesses", data.witnesses.length);
-      setWitnessNameCnt(data.witnesses.length);
+
+      setTranscripts(res.data.results);
+      setTranscriptCnt(res.data.results.length);
+      console.log("results", res.data.results);
     } catch (err) {
-      console.error(err.message);
+      console.error("❌ Failed to fetch paginated data:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchTranscripts = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/`
-      );
-      const data = await res.json();
-      console.log("witnesses", data.transcripts.length);
-      setTranscripts(data.transcripts);
-      setFilenameCnt(data.transcripts.length);
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
   // API call
   const fetchPaginatedData = async (offsetValue = 0) => {
     if (loading) return;
@@ -211,8 +257,8 @@ const TranscriptsByWitness = () => {
 
   useEffect(() => {
     fetchPaginatedData(offset);
-    fetchWitness();
-    fetchTranscripts();
+    // fetchWitness();
+    // fetchTranscripts();
   }, [offset]);
 
   const handleScroll = () => {
@@ -226,7 +272,7 @@ const TranscriptsByWitness = () => {
   //   fetchPaginatedData(currentPage, rowsPerPage);
   // }, [currentPage, rowsPerPage]);
 
-  const [showSearchSection, setShowSearchSection] = useState(false);
+  const [showSearchSection, setShowSearchSection] = useState(true);
 
   // const [searchA, setSearchA] = useState("");
   // const [searchB, setSearchB] = useState("");
@@ -380,82 +426,125 @@ const TranscriptsByWitness = () => {
     searchCType,
     selectedTranscripts,
     selectedWitness,
+    startDate,
+    endDate
+
   ]);
 
-const handleDownload = async () => {
-  const filename = "IPR2019-01313 1022 - Lipson Deposition.txt";
-
-  try {
-    const response = await fetch("/api/transcript/download-transcript/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename }),
-    });
-
-    if (!response.ok) {
-      console.error("Failed to download file");
-      return;
-    }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-  } catch (err) {
-    console.error("Error downloading file:", err);
-  }
-};
-  const fetchData = async () => {
-    setLoading(true);
+  const handleDownload = async () => {
+    notify("Download has started");
 
     try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_PROD_API_URL}/api/testimony/combined-search/`,
+      // const response = await axios.post(
+      //     `${process.env.REACT_APP_PROD_API_URL}/api/transcript/download-all-transcripts/`,
+
+      //   );
+
+      const response = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/download-all-transcripts/`,
         {
-          q1: searchA,
-          mode1: searchAType,
-          q2: searchB,
-          mode2: searchBType,
-          q3: searchC,
-          mode3: searchCType,
-          witness_names: selectedWitness,
-          transcript_names: selectedTranscripts,
-          witness_types: selectedWitnessType,
-          sources: ["farrar", "default"],
-        },
-        {
-          params: {
-            page: currentPage,
-            page_size: rowsPerPage,
-          },
+          method: "POST",
         }
       );
 
-      const results = res.data.results;
+      if (!response.ok) throw new Error("Failed to download");
 
-      const uniqueFilenames = new Set(
-        results.map((item) => item.transcript_name.trim().toLowerCase())
-      );
-      {
-        console.log("uniqueFilenames", uniqueFilenames);
+      // Must be blob, not JSON
+      const blob = await response.blob();
+
+      // Ensure it's actually a ZIP (optional check)
+      if (
+        blob.type !== "application/zip" &&
+        !response.headers.get("Content-Disposition")
+      ) {
+        throw new Error("Not a zip file response");
       }
-      setFilenameCnt(uniqueFilenames.size);
 
-      const uniqueWitnessNames = new Set(
-        results.map((item) => item.witness_name.trim().toLowerCase())
-      );
-      setWitnessNameCnt(uniqueWitnessNames.size);
-
-      setQaPairs(results);
-      setTotalCount(res.data.count);
-      setShowInitialTestimonyCnt(false);
-      setTestimonyCnt(res.data.count);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "transcripts.zip";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      notify("Transcripts downloaded successfully");
     } catch (err) {
-      console.error("❌ Failed to fetch paginated data:", err);
+      console.error("Error downloading files:", err);
+      alert("Download failed. Please try again.");
+    }
+  };
+
+  const [files, setFiles] = useState([]);
+
+  // Fetch files from API
+  const fetchFiles = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/list-sharepoint-files/`
+      );
+      if (!response.ok) throw new Error("Failed to fetch files");
+
+      const data = await response.json();
+      setFiles(data.files || []);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to fetch files");
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const fileInputRef = useRef(null);
+
+  // Trigger file explorer when button is clicked
+  // const handleButtonClick = () => {
+  //   fileInputRef.current.click();
+  //   setTimeout(()=>{
+  //       handleUpload();
+  //   },[2000])
+  // };
+
+  // Trigger file explorer on button click
+  const handleButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  // Handle file selection and upload immediately
+  const handleFileChange = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setSelectedFiles(files);
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
+
+    try {
+      setUploading(true);
+      const response = await axios.post(
+        `${process.env.REACT_APP_PROD_API_URL}/api/transcript/upload-transcripts/`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      console.log("Upload result:", response.data);
+      // alert(`Uploaded files: ${response.data.files.join(", ")}`);
+      notify(`Files uploaded successfully!`);
+    } catch (error) {
+      console.error("❌ Upload failed:", error);
+      // alert("Upload failed. Please try again.");
+      notifyFailure("Download Failed!");
+    } finally {
+      setUploading(false);
+      setSelectedFiles(null); // clear selected files
+      e.target.value = ""; // reset input so same files can be reselected
     }
   };
 
@@ -493,7 +582,6 @@ const handleDownload = async () => {
     }
   };
 
-
   const getColorFromString = (str) => {
     const colors = [
       "#6c63ff",
@@ -512,9 +600,11 @@ const handleDownload = async () => {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return colors[Math.abs(hash) % colors.length];
-
-    
   };
+
+  const notify = (message) => toast.success(message);
+  const notifyFailure = (message) => toast.error(message);
+
   return (
     <Container fluid className=" px-3">
       <Modal show={show} onHide={handleClose} scrollable centered size="lg">
@@ -650,101 +740,204 @@ const handleDownload = async () => {
       <Card className="p-3 show-page-sorath">
         {/* Search & Filter */}
 
-        <Row className="mb-3">
-          <Col md={6}>
-              <Button onClick={handleDownload}>
-      Download Transcript
-    </Button>
-              <Button
-            variant="success"
-            className="mb-3"
-            onClick={handleDownloadExcel}
-          >
-            Download Excel
-          </Button>
-          </Col>
-          <Col md={6} className="d-flex justify-content-end">
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={() => setShowSearchSection((prev) => !prev)}
-              className="filter-sorath-btn"
-            >
-              <FiSearch className="filter-sorath" />
-            </Button>
+        <Row className="mb-3 align-items-center">
+          {/* Left spacer (optional) */}
+          <Col md={6}></Col>
 
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={handleShowFilters}
-              className="filter-sorath-btn ms-3"
-            >
-              <FiFilter className="filter-sorath" />
-            </Button>
+          {/* Middle buttons + upload */}
+          <Col
+            md={6}
+            className="d-flex justify-content-between align-items-center"
+          >
+            {/* Download Buttons */}
+            <div className="d-flex align-items-center gap-5">
+              <Button onClick={handleDownload}>Download Transcript</Button>
+              <Button variant="success" onClick={handleDownloadExcel}>
+                Download Excel
+              </Button>
+            </div>
+
+            {/* Upload Section */}
+            <div className="d-flex align-items-center gap-3">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                multiple
+                accept=".txt"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+
+              <Button
+                variant="success"
+                onClick={handleButtonClick}
+                disabled={uploading}
+              >
+                {uploading ? "Uploading..." : "Upload Transcripts"}
+              </Button>
+            </div>
+
+            {/* Search + Filter Buttons */}
+            <div className="d-flex align-items-center gap-3">
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => setShowSearchSection((prev) => !prev)}
+                className="filter-sorath-btn"
+              >
+                <FiSearch className="filter-sorath" />
+              </Button>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={handleShowFilters}
+                className="filter-sorath-btn"
+              >
+                <FiFilter className="filter-sorath" />
+              </Button>
+            </div>
           </Col>
         </Row>
 
         {/* Conditional Search Section */}
+<Collapse in={showSearchSection}>
+  <div className="p-3 bg-light rounded border mb-3">
+    <Row className="g-3 align-items-start">  {/* <-- changed here */}
+      
+      {/* First Search */}
+      <Col md={3}>
+        <Form.Label>Search by Witness Name</Form.Label>
+        <Form.Control
+          value={searchB}
+          onChange={(e) => {
+            setSearchB(e.target.value);
+            fetchData();
+          }}
+          placeholder="Search by Witness"
+          className="show-page-sorath"
+        />
+        <div className="mt-2 d-flex gap-2 align-items-center">
+          {["fuzzy", "boolean", "exact"].map((opt) => (
+            <Form.Check
+              key={`searchB-${opt}`}
+              type="radio"
+              name="searchBType"
+              label={opt}
+              value={opt}
+              checked={searchBType === opt}
+              onChange={(e) => setSearchBType(e.target.value)}
+            />
+          ))}
+          <i
+            onClick={handleShow}
+            style={{ cursor: "pointer" }}
+            className="bi bi-question-circle-fill"
+          ></i>
+        </div>
+        <div
+          className="mt-3"
+          style={{
+            width: "65px",
+            height: "40px",
+            border: "2px solid #11b3ef",
+            borderRadius: "10px",
+            boxShadow: "4px 4px 10px grey",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontWeight: "bold",
+          }}
+        >
+          {transcriptCnt}
+        </div>
+      </Col>
 
-        <Collapse in={showSearchSection}>
-            <Row>
-              {/* Search C */}
-            <div className="p-3 bg-light rounded border mb-3">
+      {/* Second Search */}
+      <Col md={3}>
+        <Form.Label>Search by Case Name</Form.Label>
+        <Form.Control
+          value={searchA}
+          onChange={(e) => {
+            setSearchA(e.target.value);
+            fetchData();
+          }}
+          placeholder="Search by Case"
+          className="show-page-sorath"
+        />
+        <div className="mt-2 d-flex gap-2 align-items-center">
+          {["fuzzy", "boolean", "exact"].map((opt) => (
+            <Form.Check
+              key={`searchA-${opt}`}
+              type="radio"
+              name="searchAType"
+              label={opt}
+              value={opt}
+              checked={searchAType === opt}
+              onChange={(e) => setSearchAType(e.target.value)}
+            />
+          ))}
+          <i
+            onClick={handleShow}
+            style={{ cursor: "pointer" }}
+            className="bi bi-question-circle-fill"
+          ></i>
+        </div>
+        <div
+          className="mt-3"
+          style={{
+            width: "65px",
+            height: "40px",
+            border: "2px solid #11b3ef",
+            borderRadius: "10px",
+            boxShadow: "4px 4px 10px grey",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontWeight: "bold",
+          }}
+        >
+          {transcriptCnt}
+        </div>
+      </Col>
 
-              {/* Search B */}
-              <Col md={4}>
-                <Form.Label>Search by Witness Name</Form.Label>
-                <Form.Control
-                  value={searchB}
-                  onChange={(e) => {
-                    setSearchB(e.target.value);
-                  }}
-                  placeholder="Search by Witness"
-                  className="show-page-sorath"
-                />
-                <div className="mt-2 d-flex gap-2">
-                  {["fuzzy", "boolean", "exact"].map((opt) => (
-                    <Form.Check
-                      key={`searchB-${opt}`}
-                      type="radio"
-                      name="searchBType" // ✅ UNIQUE name
-                      label={opt}
-                      value={opt}
-                      checked={searchBType === opt}
-                      onChange={(e) => {
-                        setSearchBType(e.target.value);
+      {/* Third: Date Range Selector */}
+      <Col md={6}>
+        <Form.Label>Search by Date Range</Form.Label>
+        <div className="d-flex gap-3">
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            selectsStart
+            startDate={startDate}
+            endDate={endDate}
+            placeholderText="Start Date"
+            className="form-control"
+          />
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => setEndDate(date)}
+            selectsEnd
+            startDate={startDate}
+            endDate={endDate}
+            minDate={startDate}
+            placeholderText="End Date"
+            className="form-control"
+          />
+          <Button
+            variant="success"
+            onClick={() => console.log("Selected:", startDate, endDate)}
+          >
+            Apply
+          </Button>
+        </div>
+      </Col>
+    </Row>
+  </div>
+</Collapse>
 
-                        // fetchData()
-                      }}
-                    />
-                  ))}{" "}
-                  <i
-                    onClick={handleShow}
-                    style={{ cursor: "pointer" }}
-                    className="bi bi-question-circle-fill"
-                  ></i>{" "}
-                </div>
-                <div
-                  className="mt-3"
-                  style={{
-                    width: "65px",
-                    height: "40px",
-                    border: "2px solid #11b3ef",
-                    borderRadius: "10px",
-                    boxShadow: "4px 4px 10px grey", // blue shadow
-                    display: "flex", // 🔹 Flexbox to center content
-                    justifyContent: "center", // 🔹 Center horizontally
-                    alignItems: "center", // 🔹 Center vertically
-                    fontWeight: "bold", // Optional: makes number more prominent
-                  }}
-                >
-                  {witnessNameCnt}
-                </div>
-              </Col>
-          </div>
 
-            </Row>
-        </Collapse>
+
 
         {/* Table */}
 
@@ -753,7 +946,6 @@ const handleDownload = async () => {
           // ref={scrollContainerRef}
           // onScroll={handleScroll}
         >
-        
           {loading ? (
             <div
               className="d-flex justify-content-center align-items-center"
@@ -772,25 +964,26 @@ const handleDownload = async () => {
                   <th style={{ width: "20%" }}>Transcript</th>
                   <th style={{ width: "20%" }}>Case</th>
                   <th style={{ width: "20%" }}>Date Created</th>
-
                 </tr>
               </thead>
               <tbody className="t-body">
                 {transcripts.map((row, idx) => (
                   <tr key={idx}>
-                    <td style={{ width: "20%" }}>
-                      {row.witness_name}
-                    </td>
+                    <td style={{ width: "20%" }}>{row.witness_name}</td>
                     <td style={{ width: "20%" }}>
                       <div>{highlightText(row.transcript_date, searchA)}</div>
                       {/* <div>{highlightText(row.answer, searchA)}</div> */}
                     </td>
                     <td style={{ width: "20%" }}>
-                      {row.name}
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href={row.web_url}
+                      >
+                        {row.transcript_name}
+                      </a>
                     </td>
-                    <td style={{ width: "20%" }}>
-                      {row.case_name}
-                    </td>
+                    <td style={{ width: "20%" }}>{row.case_name}</td>
                     <td style={{ width: "20%" }}>
                       {new Date(row.created_at).toLocaleDateString("en-CA")}
                     </td>
@@ -867,7 +1060,15 @@ const handleDownload = async () => {
         // fuzzyTranscripts={fuzzyTranscripts}
         // fuzzyWitnesses={fuzzyWitnesses}
       />
-
+      <ToastContainer
+        position="top-right"
+        autoClose={3000} // auto close in 3 seconds
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+      />
       <Comments
         showComments={showComments}
         handleClose={handleCloseComments}

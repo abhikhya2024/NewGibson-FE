@@ -173,6 +173,9 @@ li.btn-style2:hover a, .active2 a {
 .third-option li.active3 {
     background: #ffffff;
 }
+i.bi.bi-question-circle-fill {
+    color: var(--secondary-hp-color);
+}
 
 
 /* table2 */
@@ -219,17 +222,34 @@ thead.table-sorath-three th {
     font-weight: 500;
     color: white;
 }
+
 /* filter */
-button.filter-sorath-btn.btn.btn-outline-primary.btn-sm {
+button.filter-sorath-btn {
     padding: 10px 15px;
     border: none;
     box-shadow: 2px 2px 10px #80808030;
     display: flex;
     align-items: center;
     justify-content: space-between;
+        background: white;
+    color: var(--text-light-hp-color);
 }
+
+button.filter-sorath-btn.btn.btn-sucess.btn-sm {
+    background: green;
+}
+
+button.filter-sorath-btn.btn.btn-sucess.btn-sm svg.filter-sorath {
+    
+    color: #ffffff;
+    fill: #ffffff;
+}
+
 .filter-sorath-btn svg.filter-sorath {
     stroke: var(--text-light-hp-color);
+    width: 24px;
+    color: var(--text-light-hp-color);
+    fill: var(--text-light-hp-color);
 }
 .filter-drp-sorath {
   white-space: normal;
@@ -469,7 +489,7 @@ line {
 }
 
 .qa-table {
-  table-layout: fixed;  
+  table-layout: inherit;  
   width: 100%;
   border-collapse: collapse;
 
